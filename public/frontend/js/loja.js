@@ -214,6 +214,7 @@
       slide.append(card);
       track.append(slide);
     });
+    document.dispatchEvent(new CustomEvent("tc-produtos-atualizados"));
   }
 
   // =====================================================
