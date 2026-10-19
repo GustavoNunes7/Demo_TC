@@ -79,13 +79,16 @@
   if (!token) return; // auth.js cuida do redirecionamento
 
   async function api(path, opts = {}) {
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      ...(opts.headers || {}),
+    };
+    if (opts.body !== undefined && !(opts.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
     const res = await fetch("/api" + path, {
       ...opts,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        ...(opts.headers || {}),
-      },
+      headers,
     });
     let data = null;
     try {
@@ -1514,8 +1517,10 @@
           <select id="mpCat" class="form-select bg-dark text-white border-secondary mb-2">${CATEGORIAS.map((c) => `<option value="${c}">${c}</option>`).join("")}</select>
           <label class="form-label small" for="mpDesc">Descrição</label>
           <textarea id="mpDesc" rows="2" class="form-control bg-dark text-white border-secondary mb-2"></textarea>
-          <label class="form-label small" for="mpImg">Imagem (caminho)</label>
-          <input id="mpImg" class="form-control bg-dark text-white border-secondary mb-2" placeholder="/landing/images/produto.png">
+          <label class="form-label small" for="mpFoto">Foto do produto</label>
+          <input id="mpFoto" type="file" accept="image/png,image/jpeg" class="form-control bg-dark text-white border-secondary mb-2">
+          <input id="mpImg" type="hidden">
+          <div class="mb-3"><img id="mpFotoPreview" alt="Prévia da foto do produto" src="/landing/images/logoTechCampus.png" style="width:100%;max-width:180px;height:130px;object-fit:contain;background:#fff;border-radius:8px;padding:6px"></div>
           <div class="row g-2">
             <div class="col"><label class="form-label small" for="mpPreco">Preço (R$)</label>
               <input id="mpPreco" type="number" min="0" step="0.01" class="form-control bg-dark text-white border-secondary"></div>
@@ -1545,6 +1550,17 @@
     $("gBusca").addEventListener("input", renderProdutosAdmin);
     $("gNovo").onclick = () => abrirProduto(null);
     $("mpSalvar").onclick = salvarProduto;
+    $("mpFoto").addEventListener("change", () => {
+      const file = $("mpFoto").files?.[0];
+      if (!file) return;
+      if (!/^image\/(jpeg|png)$/.test(file.type) || file.size > 5 * 1024 * 1024) {
+        setMsg($("mpMsg"), "Escolha uma foto JPG ou PNG de até 5 MB.");
+        $("mpFoto").value = "";
+        return;
+      }
+      $("mpFotoPreview").src = URL.createObjectURL(file);
+      setMsg($("mpMsg"), "");
+    });
     $("gFiltroPed").onchange = carregarPedidosAdmin;
     $("gAtualizar").onclick = () => {
       carregarProdutosAdmin();
@@ -1651,6 +1667,8 @@
     $("mpCat").value = p?.categoria || CATEGORIAS[0];
     $("mpDesc").value = p?.descricao || "";
     $("mpImg").value = p?.imagem || "";
+    $("mpFoto").value = "";
+    $("mpFotoPreview").src = p?.imagem || "/landing/images/logoTechCampus.png";
     $("mpPreco").value = p ? (p.preco_centavos / 100).toFixed(2) : "";
     $("mpEstoque").value = p ? p.estoque : 0;
     $("mpAtivo").checked = p ? !!p.ativo : true;
@@ -1675,6 +1693,8 @@
     )
       return setMsg($("mpMsg"), "Informe nome, preço e estoque válidos.");
 
+    const btn = $("mpSalvar");
+    btn.disabled = true;
     const body = {
       nome,
       categoria: $("mpCat").value,
@@ -1685,24 +1705,32 @@
     };
 
     try {
+      const arquivo = $("mpFoto").files?.[0];
+      if (arquivo) {
+        if (!/^image\/(jpeg|png)$/.test(arquivo.type) || arquivo.size > 5 * 1024 * 1024)
+          throw new Error("Escolha uma foto JPG ou PNG de até 5 MB.");
+        const dados = new FormData();
+        dados.append("foto", arquivo);
+        const upload = await api("/produtos/imagem", { method: "POST", body: dados });
+        body.imagem = upload.imagem;
+      }
+      if (!body.imagem) throw new Error("Selecione uma foto para o produto.");
       if (editandoId)
         await api(`/produtos/${editandoId}`, {
           method: "PATCH",
-          body: JSON.stringify({
-            ...body,
-            ativo: $("mpAtivo").checked ? 1 : 0,
-          }),
+          body: JSON.stringify({ ...body, ativo: $("mpAtivo").checked ? 1 : 0 }),
         });
       else
-        await api("/produtos", {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
+        await api("/produtos", { method: "POST", body: JSON.stringify(body) });
       modalProdAdmin.hide();
+      $("mpFoto").value = "";
       await carregarProdutosAdmin();
-      carregarProdutos();
+      await carregarProdutos();
+      setMsg($("gMsg"), "Produto salvo com sucesso.", "success");
     } catch (e) {
       setMsg($("mpMsg"), e.message);
+    } finally {
+      btn.disabled = false;
     }
   }
 
