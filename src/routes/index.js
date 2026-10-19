@@ -807,41 +807,54 @@ r.patch("/documentos/:id/status", autenticar, admin, (req, res) => {
     .run(d.usuario_id, "Atualização de documento", `O documento "${d.nome}" foi ${req.body.status}. ${clean(req.body.observacao, 500)}`.trim());
   res.json(get("documentos", d.id));
 });
-// Conteúdo informativo (avisos e formatura)
-for (const table of ["avisos", "formatura"]) {
-  r.get("/" + table, (req, res) =>
-    res.json(
-      db
-        .prepare(`SELECT * FROM ${table} WHERE publicado=1 ORDER BY id DESC`)
-        .all(),
-    ),
-  );
-  r.post("/" + table, autenticar, admin, (req, res) => {
-    const titulo = clean(req.body.titulo, 150),
-      conteudo = clean(
-        req.body[table === "avisos" ? "conteudo" : "descricao"],
-        5000,
-      );
-    if (!titulo || !conteudo) return bad(res);
-    const info =
-      table === "avisos"
-        ? db
-            .prepare("INSERT INTO avisos(titulo,conteudo) VALUES(?,?)")
-            .run(titulo, conteudo)
-        : db
-            .prepare(
-              "INSERT INTO formatura(titulo,descricao,data_evento) VALUES(?,?,?)",
-            )
-            .run(titulo, conteudo, clean(req.body.data_evento, 40));
-    res.status(201).json(get(table, info.lastInsertRowid));
-  });
-  r.delete("/" + table + "/:id", autenticar, admin, (req, res) => {
-    const info = db
-      .prepare(`UPDATE ${table} SET publicado=0 WHERE id=?`)
-      .run(positiveId(req.params.id));
-    res.status(info.changes ? 204 : 404).end();
-  });
-}
+// Avisos: publicados são públicos; gerenciamento exige autenticação administrativa.
+r.get("/avisos", (_req, res) => {
+  res.json(db.prepare("SELECT * FROM avisos WHERE publicado=1 ORDER BY CASE WHEN data_evento IS NULL OR data_evento='' THEN 1 ELSE 0 END, data_evento ASC, id DESC").all());
+});
+r.get("/admin/avisos", autenticar, admin, (_req, res) => {
+  res.json(db.prepare("SELECT * FROM avisos ORDER BY publicado DESC, data_evento ASC, id DESC").all());
+});
+r.post("/avisos", autenticar, admin, (req, res) => {
+  const titulo = clean(req.body.titulo, 150);
+  const conteudo = clean(req.body.conteudo, 5000);
+  const categoria = req.body.categoria || "importante";
+  const dataEvento = clean(req.body.data_evento, 10);
+  const horario = clean(req.body.horario, 5);
+  const local = clean(req.body.local, 150);
+  if (!titulo || !conteudo || !/^\\d{4}-\\d{2}-\\d{2}$/.test(dataEvento) || !Number.isFinite(Date.parse(dataEvento + "T12:00:00")) || !allowed(categoria, ["evento", "academico", "reuniao", "importante"]) || (horario && !/^\\d{2}:\\d{2}$/.test(horario))) return bad(res, "Preencha título, descrição, categoria e uma data válida.");
+  const info = db.prepare("INSERT INTO avisos(titulo,conteudo,categoria,data_evento,horario,local,publicado) VALUES(?,?,?,?,?,?,1)").run(titulo, conteudo, categoria, dataEvento, horario, local);
+  res.status(201).json(get("avisos", info.lastInsertRowid));
+});
+r.patch("/avisos/:id", autenticar, admin, (req, res) => {
+  const aviso = get("avisos", positiveId(req.params.id));
+  if (!aviso) return res.sendStatus(404);
+  const titulo = req.body.titulo === undefined ? aviso.titulo : clean(req.body.titulo, 150);
+  const conteudo = req.body.conteudo === undefined ? aviso.conteudo : clean(req.body.conteudo, 5000);
+  const categoria = req.body.categoria === undefined ? aviso.categoria : req.body.categoria;
+  const dataEvento = req.body.data_evento === undefined ? aviso.data_evento : clean(req.body.data_evento, 10);
+  const horario = req.body.horario === undefined ? aviso.horario : clean(req.body.horario, 5);
+  const local = req.body.local === undefined ? aviso.local : clean(req.body.local, 150);
+  if (!titulo || !conteudo || !/^\\d{4}-\\d{2}-\\d{2}$/.test(dataEvento || "") || !Number.isFinite(Date.parse(dataEvento + "T12:00:00")) || !allowed(categoria, ["evento", "academico", "reuniao", "importante"]) || (horario && !/^\\d{2}:\\d{2}$/.test(horario))) return bad(res, "Dados do aviso inválidos.");
+  db.prepare("UPDATE avisos SET titulo=?,conteudo=?,categoria=?,data_evento=?,horario=?,local=? WHERE id=?").run(titulo, conteudo, categoria, dataEvento, horario || null, local, aviso.id);
+  res.json(get("avisos", aviso.id));
+});
+r.delete("/avisos/:id", autenticar, admin, (req, res) => {
+  const result = db.prepare("UPDATE avisos SET publicado=0 WHERE id=? AND publicado=1").run(positiveId(req.params.id));
+  res.status(result.changes ? 204 : 404).end();
+});
+
+// Conteúdo informativo de formatura.
+r.get("/formatura", (_req, res) => res.json(db.prepare("SELECT * FROM formatura WHERE publicado=1 ORDER BY id DESC").all()));
+r.post("/formatura", autenticar, admin, (req, res) => {
+  const titulo = clean(req.body.titulo, 150), descricao = clean(req.body.descricao, 5000), dataEvento = clean(req.body.data_evento, 40);
+  if (!titulo || !descricao) return bad(res);
+  const info = db.prepare("INSERT INTO formatura(titulo,descricao,data_evento) VALUES(?,?,?)").run(titulo, descricao, dataEvento);
+  res.status(201).json(get("formatura", info.lastInsertRowid));
+});
+r.delete("/formatura/:id", autenticar, admin, (req, res) => {
+  const info = db.prepare("UPDATE formatura SET publicado=0 WHERE id=?").run(positiveId(req.params.id));
+  res.status(info.changes ? 204 : 404).end();
+});
 
 // Agendamentos
 r.post("/agendamentos", autenticar, (req, res) => {
