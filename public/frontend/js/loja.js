@@ -2056,7 +2056,8 @@
       montarModalCarrinho();
       montarModalPagamento();
       criarBotaoCarrinho();
-      carregarProdutos();
+      if (user.papel !== "admin") carregarProdutos();
+      else document.getElementById("carrinhoBotao")?.remove();
     }
 
     // Agendamentos
