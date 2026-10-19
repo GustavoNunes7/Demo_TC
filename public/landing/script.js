@@ -1395,6 +1395,7 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", async () => {
   const calendarDays = document.getElementById("calendarDays");
   const calendarMonth = document.getElementById("calendarMonth");
+  if (calendarDays?.dataset.calendarOwner === "sistema") return;
   const previousButton = document.getElementById("calendarPrev");
   const nextButton = document.getElementById("calendarNext");
   const todayButton = document.getElementById("calendarToday");

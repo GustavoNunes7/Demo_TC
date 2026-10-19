@@ -1455,8 +1455,8 @@
     secGerente.innerHTML = `
       <div class="container-fluid px-0 text-white">
         <div class="mb-4 text-start">
-          <h2 class="fw-bold fs-1 mb-1">Gerência</h2>
-          <p class="text-secondary small">Visualize os produtos e autorize os pedidos dos alunos.</p>
+          <h2 class="fw-bold fs-1 mb-1">Painel Administrativo</h2>
+          <p class="text-secondary small">Gerencie produtos, acompanhe pedidos e consulte tokens de retirada dos alunos.</p>
         </div>
         <ul class="nav nav-pills mb-3 gap-2">
           <li class="nav-item"><button type="button" class="nav-link active" id="tabGProd">Produtos</button></li>
@@ -1516,33 +1516,33 @@
     m.innerHTML = `
     <div class="modal fade" id="modalProdAdmin" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered"><div class="modal-content bg-dark text-white border-secondary">
-        <div class="modal-header border-secondary"><h5 class="modal-title" id="mpTitulo"></h5>
+        <div class="modal-header border-secondary"><h5 class="modal-title" id="gProdTitulo"></h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button></div>
         <div class="modal-body">
-          <label class="form-label small" for="mpNome">Nome</label>
-          <input id="mpNome" class="form-control bg-dark text-white border-secondary mb-2" maxlength="120">
-          <label class="form-label small" for="mpCat">Categoria</label>
-          <select id="mpCat" class="form-select bg-dark text-white border-secondary mb-2">${CATEGORIAS.map((c) => `<option value="${c}">${c}</option>`).join("")}</select>
-          <label class="form-label small" for="mpDesc">Descrição</label>
-          <textarea id="mpDesc" rows="2" class="form-control bg-dark text-white border-secondary mb-2"></textarea>
-          <label class="form-label small" for="mpFoto">Foto do produto</label>
-          <input id="mpFoto" type="file" accept="image/png,image/jpeg" class="form-control bg-dark text-white border-secondary mb-2">
-          <input id="mpImg" type="hidden">
-          <div class="mb-3"><img id="mpFotoPreview" alt="Prévia da foto do produto" src="/landing/images/logoTechCampus.png" style="width:100%;max-width:180px;height:130px;object-fit:contain;background:#fff;border-radius:8px;padding:6px"></div>
+          <label class="form-label small" for="gProdNome">Nome</label>
+          <input id="gProdNome" class="form-control bg-dark text-white border-secondary mb-2" maxlength="120">
+          <label class="form-label small" for="gProdCat">Categoria</label>
+          <select id="gProdCat" class="form-select bg-dark text-white border-secondary mb-2">${CATEGORIAS.map((c) => `<option value="${c}">${c}</option>`).join("")}</select>
+          <label class="form-label small" for="gProdDesc">Descrição</label>
+          <textarea id="gProdDesc" rows="2" class="form-control bg-dark text-white border-secondary mb-2"></textarea>
+          <label class="form-label small" for="gProdFoto">Foto do produto</label>
+          <input id="gProdFoto" type="file" accept="image/png,image/jpeg" class="form-control bg-dark text-white border-secondary mb-2">
+          <input id="gProdImagem" type="hidden">
+          <div class="mb-3"><img id="gProdFotoPreview" alt="Prévia da foto do produto" src="/landing/images/logoTechCampus.png" style="width:100%;max-width:180px;height:130px;object-fit:contain;background:#fff;border-radius:8px;padding:6px"></div>
           <div class="row g-2">
-            <div class="col"><label class="form-label small" for="mpPreco">Preço (R$)</label>
-              <input id="mpPreco" type="number" min="0" step="0.01" class="form-control bg-dark text-white border-secondary"></div>
-            <div class="col"><label class="form-label small" for="mpEstoque">Estoque</label>
-              <input id="mpEstoque" type="number" min="0" step="1" class="form-control bg-dark text-white border-secondary"></div>
+            <div class="col"><label class="form-label small" for="gProdPreco">Preço (R$)</label>
+              <input id="gProdPreco" type="number" min="0" step="0.01" class="form-control bg-dark text-white border-secondary"></div>
+            <div class="col"><label class="form-label small" for="gProdEstoque">Estoque</label>
+              <input id="gProdEstoque" type="number" min="0" step="1" class="form-control bg-dark text-white border-secondary"></div>
           </div>
-          <div class="form-check form-switch mt-3" id="mpAtivoBox">
-            <input class="form-check-input" type="checkbox" id="mpAtivo" checked><label class="form-check-label" for="mpAtivo">Produto ativo na loja</label>
+          <div class="form-check form-switch mt-3" id="gProdAtivoBox">
+            <input class="form-check-input" type="checkbox" id="gProdAtivo" checked><label class="form-check-label" for="gProdAtivo">Produto ativo na loja</label>
           </div>
-          <div id="mpMsg" role="alert" class="small mt-2"></div>
+          <div id="gProdMsg" role="alert" class="small mt-2"></div>
         </div>
         <div class="modal-footer border-secondary">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-danger" id="mpSalvar">Salvar</button>
+          <button type="button" class="btn btn-danger" id="gProdSalvar">Salvar</button>
         </div>
       </div></div>
     </div>`;
@@ -1559,17 +1559,17 @@
     $("gAvisoAtualizar").onclick = carregarAvisosAdmin;
     $("gBusca").addEventListener("input", renderProdutosAdmin);
     $("gNovo").onclick = () => abrirProduto(null);
-    $("mpSalvar").onclick = salvarProduto;
-    $("mpFoto").addEventListener("change", () => {
-      const file = $("mpFoto").files?.[0];
+    $("gProdSalvar").onclick = salvarProduto;
+    $("gProdFoto").addEventListener("change", () => {
+      const file = $("gProdFoto").files?.[0];
       if (!file) return;
       if (!/^image\/(jpeg|png)$/.test(file.type) || file.size > 5 * 1024 * 1024) {
-        setMsg($("mpMsg"), "Escolha uma foto JPG ou PNG de até 5 MB.");
-        $("mpFoto").value = "";
+        setMsg($("gProdMsg"), "Escolha uma foto JPG ou PNG de até 5 MB.");
+        $("gProdFoto").value = "";
         return;
       }
-      $("mpFotoPreview").src = URL.createObjectURL(file);
-      setMsg($("mpMsg"), "");
+      $("gProdFotoPreview").src = URL.createObjectURL(file);
+      setMsg($("gProdMsg"), "");
     });
     $("gFiltroPed").onchange = carregarPedidosAdmin;
     $("gAtualizar").onclick = () => {
@@ -1674,7 +1674,6 @@
                       try {
                         await api("/produtos/" + p.id, { method: "DELETE" });
                         await carregarProdutosAdmin();
-                        await carregarProdutos();
                         setMsg($("gMsg"), "Produto removido da loja.", "success");
                       } catch (e) { setMsg($("gMsg"), e.message); }
                     }
@@ -1700,27 +1699,27 @@
 
   function abrirProduto(p) {
     editandoId = p ? p.id : null;
-    $("mpTitulo").textContent = p ? "Editar produto" : "Novo produto";
-    $("mpNome").value = p?.nome || "";
-    $("mpCat").value = p?.categoria || CATEGORIAS[0];
-    $("mpDesc").value = p?.descricao || "";
-    $("mpImg").value = p?.imagem || "";
-    $("mpFoto").value = "";
-    $("mpFotoPreview").src = p?.imagem || "/landing/images/logoTechCampus.png";
-    $("mpPreco").value = p ? (p.preco_centavos / 100).toFixed(2) : "";
-    $("mpEstoque").value = p ? p.estoque : 0;
-    $("mpAtivo").checked = p ? !!p.ativo : true;
-    $("mpAtivoBox").hidden = !p;
-    setMsg($("mpMsg"), "");
+    $("gProdTitulo").textContent = p ? "Editar produto" : "Novo produto";
+    $("gProdNome").value = p?.nome || "";
+    $("gProdCat").value = p?.categoria || CATEGORIAS[0];
+    $("gProdDesc").value = p?.descricao || "";
+    $("gProdImagem").value = p?.imagem || "";
+    $("gProdFoto").value = "";
+    $("gProdFotoPreview").src = p?.imagem || "/landing/images/logoTechCampus.png";
+    $("gProdPreco").value = p ? (p.preco_centavos / 100).toFixed(2) : "";
+    $("gProdEstoque").value = p ? p.estoque : 0;
+    $("gProdAtivo").checked = p ? !!p.ativo : true;
+    $("gProdAtivoBox").hidden = !p;
+    setMsg($("gProdMsg"), "");
     modalProdAdmin.show();
   }
 
   async function salvarProduto() {
     const preco = Math.round(
-      parseFloat(String($("mpPreco").value).replace(",", ".")) * 100
+      parseFloat(String($("gProdPreco").value).replace(",", ".")) * 100
     );
-    const estoque = parseInt($("mpEstoque").value, 10);
-    const nome = $("mpNome").value.trim();
+    const estoque = parseInt($("gProdEstoque").value, 10);
+    const nome = $("gProdNome").value.trim();
 
     if (
       !nome ||
@@ -1729,21 +1728,21 @@
       !Number.isSafeInteger(estoque) ||
       estoque < 0
     )
-      return setMsg($("mpMsg"), "Informe nome, preço e estoque válidos.");
+      return setMsg($("gProdMsg"), "Informe nome, preço e estoque válidos.");
 
-    const btn = $("mpSalvar");
+    const btn = $("gProdSalvar");
     btn.disabled = true;
     const body = {
       nome,
-      categoria: $("mpCat").value,
-      descricao: $("mpDesc").value,
-      imagem: $("mpImg").value,
+      categoria: $("gProdCat").value,
+      descricao: $("gProdDesc").value,
+      imagem: $("gProdImagem").value,
       preco_centavos: preco,
       estoque,
     };
 
     try {
-      const arquivo = $("mpFoto").files?.[0];
+      const arquivo = $("gProdFoto").files?.[0];
       if (arquivo) {
         if (!/^image\/(jpeg|png)$/.test(arquivo.type) || arquivo.size > 5 * 1024 * 1024)
           throw new Error("Escolha uma foto JPG ou PNG de até 5 MB.");
@@ -1756,17 +1755,16 @@
       if (editandoId)
         await api(`/produtos/${editandoId}`, {
           method: "PATCH",
-          body: JSON.stringify({ ...body, ativo: $("mpAtivo").checked ? 1 : 0 }),
+          body: JSON.stringify({ ...body, ativo: $("gProdAtivo").checked ? 1 : 0 }),
         });
       else
         await api("/produtos", { method: "POST", body: JSON.stringify(body) });
       modalProdAdmin.hide();
-      $("mpFoto").value = "";
+      $("gProdFoto").value = "";
       await carregarProdutosAdmin();
-      await carregarProdutos();
       setMsg($("gMsg"), "Produto salvo com sucesso.", "success");
     } catch (e) {
-      setMsg($("mpMsg"), e.message);
+      setMsg($("gProdMsg"), e.message);
     } finally {
       btn.disabled = false;
     }
@@ -2045,8 +2043,8 @@
       h(
         "div",
         { class: "d-flex flex-column" },
-        h("span", { class: "fw-bold fs-6" }, "Gerência"),
-        h("span", { class: "text-white-50 small" }, "Produtos e pedidos")
+        h("span", { class: "fw-bold fs-6" }, "Painel Administrativo"),
+        h("span", { class: "text-white-50 small" }, "Produtos, pedidos e tokens")
       )
     );
     const alvo = document.querySelector('a.menu-item[href="#usuarios"]');
@@ -2233,15 +2231,14 @@
     const saudacao = document.getElementById("tcNomeUsuario");
     if (saudacao) saudacao.textContent = (user.nome || "Aluno").trim().split(/\s+/)[0];
 
-    // Inicializar loja para alunos
-    if (document.getElementById("productsTrack")) {
+    // Recursos de compra são inicializados somente para alunos.
+    if (document.getElementById("productsTrack") && user.papel !== "admin") {
       carregarCarrinho();
       montarModalProduto();
       montarModalCarrinho();
       montarModalPagamento();
       criarBotaoCarrinho();
-      if (user.papel !== "admin") carregarProdutos();
-      else $("botaoCarrinho")?.remove();
+      carregarProdutos();
     }
 
     // Agendamentos

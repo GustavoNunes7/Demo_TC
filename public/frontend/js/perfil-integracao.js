@@ -54,6 +54,7 @@
     if (!tabela || !form || !botaoNovo || form.dataset.apiWired) return;
     form.dataset.apiWired = "1";
     let usuarios = [];
+    const fotoObjectUrls = new Set();
     const modalEl = document.getElementById("modalUsuario");
     const modal = window.bootstrap?.Modal && modalEl ? bootstrap.Modal.getOrCreateInstance(modalEl) : null;
     const campo = (id) => document.getElementById(id);
@@ -80,9 +81,31 @@
         return (!q || texto.includes(q)) && (papel === "todos" || u.papel === papel) &&
           (status === "todos" || (status === "ativo" ? u.ativo !== 0 : u.ativo === 0));
       });
+      for (const url of fotoObjectUrls) URL.revokeObjectURL(url);
+      fotoObjectUrls.clear();
       tabela.replaceChildren();
       for (const u of filtrados) {
         const tr = document.createElement("tr");
+        const fotoCelula = document.createElement("td");
+        const foto = document.createElement("img");
+        foto.alt = "Foto de " + (u.nome || "usuário");
+        foto.className = "rounded-circle border border-secondary";
+        foto.width = 42; foto.height = 42;
+        foto.style.objectFit = "cover";
+        foto.src = "/landing/images/logoTechCampus.png";
+        fotoCelula.append(foto);
+        tr.append(fotoCelula);
+        if (u.foto_url) {
+          fetch("/api/usuarios/" + u.id + "/foto", { headers: { Authorization: `Bearer ${token()}` }, cache: "no-store" })
+            .then(response => { if (!response.ok) throw new Error("Foto indisponível"); return response.blob(); })
+            .then(blob => {
+              const url = URL.createObjectURL(blob);
+              if (!foto.isConnected) { URL.revokeObjectURL(url); return; }
+              fotoObjectUrls.add(url);
+              foto.src = url;
+            })
+            .catch(() => {});
+        }
         for (const valor of [u.nome, u.turma || "—", u.email, u.papel === "admin" ? "Administrador" : "Aluno", u.ativo === 0 ? "Inativo" : "Ativo"]) {
           const td = document.createElement("td"); td.textContent = valor || "—"; tr.append(td);
         }
