@@ -1,78 +1,116 @@
-/* Notificações persistentes para perfis de aluno e administrador. */
+/* Notificações persistentes integradas ao sino do cabeçalho. */
 (() => {
   "use strict";
-  const token = sessionStorage.getItem("techcampus_token");
-  if (!token || document.getElementById("tc-notificacoes-botao")) return;
+  const token = () => sessionStorage.getItem("techcampus_token");
+  const botao = document.querySelector(".notification-btn");
+  if (!botao || botao.dataset.tcNotificacoes === "1") return;
+  botao.dataset.tcNotificacoes = "1";
 
-  const css = document.createElement("style");
-  css.textContent = `
-    #tc-notificacoes-botao{position:fixed;right:20px;bottom:20px;z-index:10050;border:0;border-radius:999px;padding:12px 16px;background:#c62828;color:#fff;font-weight:700;box-shadow:0 5px 20px #0003;cursor:pointer}
-    #tc-notificacoes-botao .tc-contador{display:inline-flex;min-width:22px;height:22px;align-items:center;justify-content:center;border-radius:50%;background:#fff;color:#b71c1c;margin-left:7px;font-size:12px}
-    #tc-notificacoes-painel{position:fixed;right:20px;bottom:78px;width:min(390px,calc(100vw - 32px));max-height:min(65vh,560px);overflow:auto;z-index:10051;background:var(--bs-body-bg,#fff);color:var(--bs-body-color,#222);border:1px solid #8885;border-radius:14px;box-shadow:0 8px 32px #0003;padding:16px}
-    #tc-notificacoes-painel[hidden]{display:none} .tc-notif-item{padding:12px 0;border-bottom:1px solid #8883;overflow-wrap:anywhere}.tc-notif-item:last-child{border-bottom:0}.tc-notif-item.nao-lida{border-left:3px solid #c62828;padding-left:10px}.tc-notif-data{font-size:12px;opacity:.7;margin-top:5px}
-  `;
-  document.head.append(css);
-  const botao = document.createElement("button");
-  botao.id = "tc-notificacoes-botao";
-  botao.type = "button";
-  botao.textContent = "Notificações";
-  const contador = document.createElement("span");
-  contador.className = "tc-contador";
-  contador.textContent = "0";
-  botao.append(contador);
-  const painel = document.createElement("section");
-  painel.id = "tc-notificacoes-painel";
-  painel.hidden = true;
-  painel.setAttribute("aria-label", "Notificações da conta");
+  const menu = botao.closest(".dropdown")?.querySelector(".dropdown-menu");
+  const badge = botao.querySelector(".notification-badge");
+  if (!menu) return;
+
+  menu.style.width = "min(360px, calc(100vw - 24px))";
+  menu.style.maxHeight = "min(70vh, 560px)";
+  menu.style.overflowY = "auto";
+  menu.replaceChildren();
+
   const cabecalho = document.createElement("div");
-  cabecalho.style.cssText = "display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px";
-  const titulo = document.createElement("strong"); titulo.textContent = "Suas notificações";
-  const atualizar = document.createElement("button"); atualizar.type = "button"; atualizar.className = "btn btn-sm btn-outline-secondary"; atualizar.textContent = "Atualizar";
+  cabecalho.className = "d-flex justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom border-secondary";
+  const titulo = document.createElement("strong");
+  titulo.textContent = "Notificações";
+  const atualizar = document.createElement("button");
+  atualizar.type = "button";
+  atualizar.className = "btn btn-sm btn-outline-secondary";
+  atualizar.textContent = "Atualizar";
   cabecalho.append(titulo, atualizar);
   const lista = document.createElement("div");
-  painel.append(cabecalho, lista);
-  document.body.append(botao, painel);
+  lista.setAttribute("aria-live", "polite");
+  menu.append(cabecalho, lista);
+
   function aplicarPreferencia() {
     const ativa = localStorage.getItem("tc_notificacoes_ativas") !== "0";
     botao.hidden = !ativa;
-    if (!ativa) painel.hidden = true;
+    if (!ativa && badge) badge.hidden = true;
   }
   aplicarPreferencia();
   window.addEventListener("tc-preferencia-notificacoes", aplicarPreferencia);
 
+  function texto(tag, classe, valor) {
+    const el = document.createElement(tag);
+    if (classe) el.className = classe;
+    el.textContent = valor ?? "";
+    return el;
+  }
+
   async function carregar() {
+    if (!token()) return;
     try {
-      const resp = await fetch("/api/notificacoes", { headers: { Authorization: `Bearer ${token}` } });
-      if (!resp.ok) throw new Error("Não foi possível carregar notificações.");
-      const itens = await resp.json();
-      contador.textContent = String(itens.filter((n) => !n.lida).length);
+      const resp = await fetch("/api/notificacoes", {
+        headers: { Authorization: `Bearer ${token()}` }
+      });
+      const dados = await resp.json().catch(() => []);
+      if (!resp.ok) throw new Error(dados.erro || "Não foi possível carregar as notificações.");
+      const itens = Array.isArray(dados) ? dados : [];
+      const naoLidas = itens.filter((n) => Number(n.lida) === 0).length;
+      if (badge) {
+        badge.textContent = naoLidas > 99 ? "99+" : String(naoLidas);
+        badge.hidden = naoLidas === 0;
+        badge.setAttribute("aria-label", `${naoLidas} notificações não lidas`);
+      }
       lista.replaceChildren();
       if (!itens.length) {
-        const vazio = document.createElement("p"); vazio.className = "mb-0 small"; vazio.textContent = "Você não tem notificações no momento."; lista.append(vazio); return;
+        lista.append(texto("p", "small text-secondary mb-0 py-2", "Você não tem notificações no momento."));
+        return;
       }
       for (const item of itens) {
         const bloco = document.createElement("article");
-        bloco.className = `tc-notif-item${item.lida ? "" : " nao-lida"}`;
-        const h = document.createElement("strong"); h.textContent = item.titulo;
-        const msg = document.createElement("p"); msg.className = "mb-1"; msg.textContent = item.mensagem;
-        const data = document.createElement("div"); data.className = "tc-notif-data"; data.textContent = item.criada_em || "";
-        bloco.append(h, msg, data);
-        if (!item.lida) {
-          const ler = document.createElement("button"); ler.type = "button"; ler.className = "btn btn-sm btn-outline-secondary mt-2"; ler.textContent = "Marcar como lida";
-          ler.addEventListener("click", async () => {
-            try { await fetch(`/api/notificacoes/${item.id}/lida`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }); await carregar(); }
-            catch { /* A próxima atualização tentará novamente. */ }
+        bloco.className = "p-2 mb-2 rounded border border-secondary";
+        if (Number(item.lida) === 0) bloco.style.borderLeft = "3px solid #c62828";
+        bloco.append(
+          texto("strong", "d-block", item.titulo || "Notificação"),
+          texto("p", "small mb-1 text-wrap", item.mensagem || ""),
+          texto("small", "text-secondary", item.criada_em || "")
+        );
+        if (Number(item.lida) === 0) {
+          const ler = texto("button", "btn btn-sm btn-outline-secondary mt-2", "Marcar como lida");
+          ler.type = "button";
+          ler.addEventListener("click", async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            ler.disabled = true;
+            try {
+              const resposta = await fetch(`/api/notificacoes/${encodeURIComponent(item.id)}/lida`, {
+                method: "PATCH",
+                headers: { Authorization: `Bearer ${token()}` }
+              });
+              if (!resposta.ok) throw new Error("Não foi possível atualizar a notificação.");
+              await carregar();
+            } catch (erro) {
+              ler.disabled = false;
+              lista.prepend(texto("p", "small text-danger", erro.message));
+            }
           });
           bloco.append(ler);
         }
         lista.append(bloco);
       }
-    } catch (e) {
-      lista.replaceChildren(); const erro = document.createElement("p"); erro.className = "mb-0 text-danger small"; erro.textContent = e.message; lista.append(erro);
+    } catch (erro) {
+      lista.replaceChildren(texto("p", "small text-danger mb-0", erro.message));
     }
   }
-  botao.addEventListener("click", () => { painel.hidden = !painel.hidden; if (!painel.hidden) carregar(); });
-  atualizar.addEventListener("click", carregar);
+
+  const dropdown = botao.closest(".dropdown");
+  dropdown?.addEventListener("show.bs.dropdown", carregar);
+  botao.addEventListener("click", () => {
+    // Bootstrap abre o menu; o clique também atualiza caso a biblioteca não esteja disponível.
+    carregar();
+  });
+  atualizar.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    carregar();
+  });
   carregar();
   window.setInterval(carregar, 60000);
 })();
