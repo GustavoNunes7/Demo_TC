@@ -1605,14 +1605,26 @@
               h(
                 "td",
                 { class: "text-end" },
-                h(
-                  "button",
-                  {
+                h("div", { class: "d-flex justify-content-end gap-2" },
+                  h("button", {
                     class: "btn btn-sm btn-outline-light",
                     type: "button",
                     onclick: () => abrirProduto(p),
-                  },
-                  "Editar"
+                  }, "Editar"),
+                  h("button", {
+                    class: "btn btn-sm btn-outline-danger",
+                    type: "button",
+                    disabled: !p.ativo,
+                    onclick: async () => {
+                      if (!confirm("Remover “" + p.nome + "” da loja? O histórico de pedidos será preservado.")) return;
+                      try {
+                        await api("/produtos/" + p.id, { method: "DELETE" });
+                        await carregarProdutosAdmin();
+                        await carregarProdutos();
+                        setMsg($("gMsg"), "Produto removido da loja.", "success");
+                      } catch (e) { setMsg($("gMsg"), e.message); }
+                    }
+                  }, p.ativo ? "Excluir" : "Excluído")
                 )
               )
             )
@@ -2159,7 +2171,7 @@
       montarModalPagamento();
       criarBotaoCarrinho();
       if (user.papel !== "admin") carregarProdutos();
-      else document.getElementById("carrinhoBotao")?.remove();
+      else $("botaoCarrinho")?.remove();
     }
 
     // Agendamentos
