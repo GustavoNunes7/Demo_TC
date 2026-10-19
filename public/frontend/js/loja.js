@@ -1911,7 +1911,7 @@
     if (nome) nome.textContent = user.nome;
     if (sub) sub.textContent = user.papel === "admin" ? "Administrador" : "Aluno SENAI";
     const saudacao = document.getElementById("tcNomeUsuario");
-    if (saudacao) saudacao.textContent = (user.nome || "Aluno").trim().split(/\\s+/)[0];
+    if (saudacao) saudacao.textContent = (user.nome || "Aluno").trim().split(/\s+/)[0];
 
     // Inicializar loja para alunos
     if (document.getElementById("productsTrack")) {
