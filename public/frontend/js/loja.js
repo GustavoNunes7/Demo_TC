@@ -139,7 +139,20 @@
         if (!btn.dataset.original)
           btn.dataset.original = btn.textContent.trim();
 
-        const p = mapa.get(norm(card.querySelector("h5")?.textContent));
+        const nomeCard = norm(card.querySelector("h5")?.textContent);
+        const aliases = {
+          caixadebolinhasdepingpong: ["bolasdepingpong", "bolinhasdepingpong"],
+          bolinhasdepingpong: ["caixadebolinhasdepingpong", "bolasdepingpong"],
+          uniformeescolarbranco: ["camisaescolarbranca"],
+          uniformeescolarpreto: ["camisaescolarpreta"],
+          jalecomecanica: ["jalecoparamecanica"],
+          oculosdeprotecao: ["oculosprotecao"],
+        };
+        let p = mapa.get(nomeCard);
+        if (!p) {
+          const candidatos = new Set(aliases[nomeCard] || []);
+          p = produtos.find((item) => candidatos.has(norm(item.nome)));
+        }
         btn.disabled = false;
         btn.textContent = btn.dataset.original;
 
@@ -1896,7 +1909,9 @@
     const nome = document.querySelector("#userDropdown .fw-semibold");
     const sub = document.querySelector("#userDropdown small");
     if (nome) nome.textContent = user.nome;
-    if (sub) sub.textContent = user.papel === "admin" ? "Gerente" : "Aluno SENAI";
+    if (sub) sub.textContent = user.papel === "admin" ? "Administrador" : "Aluno SENAI";
+    const saudacao = document.getElementById("tcNomeUsuario");
+    if (saudacao) saudacao.textContent = (user.nome || "Aluno").trim().split(/\\s+/)[0];
 
     // Inicializar loja para alunos
     if (document.getElementById("productsTrack")) {
