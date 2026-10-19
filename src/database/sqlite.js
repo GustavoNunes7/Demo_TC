@@ -69,6 +69,13 @@ CREATE TABLE IF NOT EXISTS formatura (
  data_evento TEXT, publicado INTEGER NOT NULL DEFAULT 1, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 `);
+// Migração compatível: metadados usados pelo painel administrativo e pelo calendário de avisos.
+const colunasAvisos = db.prepare("PRAGMA table_info(avisos)").all().map((c) => c.name);
+if (!colunasAvisos.includes("categoria")) db.exec("ALTER TABLE avisos ADD COLUMN categoria TEXT NOT NULL DEFAULT 'importante'");
+if (!colunasAvisos.includes("data_evento")) db.exec("ALTER TABLE avisos ADD COLUMN data_evento TEXT");
+if (!colunasAvisos.includes("horario")) db.exec("ALTER TABLE avisos ADD COLUMN horario TEXT");
+if (!colunasAvisos.includes("local")) db.exec("ALTER TABLE avisos ADD COLUMN local TEXT");
+
 // Migração compatível: a interface da loja oferece PIX, cartão e dinheiro.
 const pagamentosSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='pagamentos'").get()?.sql || "";
 if (!pagamentosSql.includes("'dinheiro'")) {

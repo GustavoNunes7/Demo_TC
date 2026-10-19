@@ -10,13 +10,16 @@
   const badge = botao.querySelector(".notification-badge");
   if (!menu) return;
 
-  menu.style.width = "min(360px, calc(100vw - 24px))";
+  menu.classList.add("tc-notification-menu");
+  menu.style.width = "min(380px, calc(100vw - 24px))";
   menu.style.maxHeight = "min(70vh, 560px)";
   menu.style.overflowY = "auto";
+  menu.style.backgroundColor = "#171b22";
+  menu.style.opacity = "1";
   menu.replaceChildren();
 
   const cabecalho = document.createElement("div");
-  cabecalho.className = "d-flex justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom border-secondary";
+  cabecalho.className = "tc-notification-header d-flex justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom";
   const titulo = document.createElement("strong");
   titulo.textContent = "Notificações";
   const atualizar = document.createElement("button");
@@ -65,15 +68,15 @@
       }
       for (const item of itens) {
         const bloco = document.createElement("article");
-        bloco.className = "p-2 mb-2 rounded border border-secondary";
-        if (Number(item.lida) === 0) bloco.style.borderLeft = "3px solid #c62828";
+        bloco.className = "tc-notification-item p-3 mb-2 rounded border";
+        if (Number(item.lida) === 0) bloco.classList.add("is-unread");
         bloco.append(
           texto("strong", "d-block", item.titulo || "Notificação"),
           texto("p", "small mb-1 text-wrap", item.mensagem || ""),
           texto("small", "text-secondary", item.criada_em || "")
         );
         if (Number(item.lida) === 0) {
-          const ler = texto("button", "btn btn-sm btn-outline-secondary mt-2", "Marcar como lida");
+          const ler = texto("button", "btn btn-sm btn-outline-secondary mt-2 tc-notification-read", "Marcar como lida");
           ler.type = "button";
           ler.addEventListener("click", async (event) => {
             event.preventDefault();
