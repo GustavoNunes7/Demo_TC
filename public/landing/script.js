@@ -71,6 +71,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  const urlsDocumentosAbertos = new Set();
+  window.addEventListener("beforeunload", () => {
+    urlsDocumentosAbertos.forEach((url) => URL.revokeObjectURL(url));
+    urlsDocumentosAbertos.clear();
+  });
+
   async function abrirDocumento(id) {
     const janela = window.open("about:blank", "_blank");
     const t = token();
@@ -93,6 +99,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
+      // A URL precisa continuar válida enquanto a aba do documento estiver aberta.
+      urlsDocumentosAbertos.add(url);
 
       if (janela && !janela.closed) {
         janela.location.href = url;
@@ -106,7 +114,6 @@ document.addEventListener("DOMContentLoaded", function () {
         link.remove();
       }
 
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (e) {
       console.error("Visualização:", e);
       msg.textContent = e.message || "Não foi possível abrir o documento.";
