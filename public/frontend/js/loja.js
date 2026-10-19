@@ -1455,8 +1455,8 @@
     secGerente.innerHTML = `
       <div class="container-fluid px-0 text-white">
         <div class="mb-4 text-start">
-          <h2 class="fw-bold fs-1 mb-1">Gerência</h2>
-          <p class="text-secondary small">Visualize os produtos e autorize os pedidos dos alunos.</p>
+          <h2 class="fw-bold fs-1 mb-1">Painel Administrativo</h2>
+          <p class="text-secondary small">Gerencie produtos, acompanhe pedidos e consulte tokens de retirada dos alunos.</p>
         </div>
         <ul class="nav nav-pills mb-3 gap-2">
           <li class="nav-item"><button type="button" class="nav-link active" id="tabGProd">Produtos</button></li>
@@ -1674,7 +1674,6 @@
                       try {
                         await api("/produtos/" + p.id, { method: "DELETE" });
                         await carregarProdutosAdmin();
-                        await carregarProdutos();
                         setMsg($("gMsg"), "Produto removido da loja.", "success");
                       } catch (e) { setMsg($("gMsg"), e.message); }
                     }
@@ -1763,7 +1762,6 @@
       modalProdAdmin.hide();
       $("gProdFoto").value = "";
       await carregarProdutosAdmin();
-      await carregarProdutos();
       setMsg($("gMsg"), "Produto salvo com sucesso.", "success");
     } catch (e) {
       setMsg($("gProdMsg"), e.message);
@@ -2045,8 +2043,8 @@
       h(
         "div",
         { class: "d-flex flex-column" },
-        h("span", { class: "fw-bold fs-6" }, "Gerência"),
-        h("span", { class: "text-white-50 small" }, "Produtos e pedidos")
+        h("span", { class: "fw-bold fs-6" }, "Painel Administrativo"),
+        h("span", { class: "text-white-50 small" }, "Produtos, pedidos e tokens")
       )
     );
     const alvo = document.querySelector('a.menu-item[href="#usuarios"]');
@@ -2233,15 +2231,14 @@
     const saudacao = document.getElementById("tcNomeUsuario");
     if (saudacao) saudacao.textContent = (user.nome || "Aluno").trim().split(/\s+/)[0];
 
-    // Inicializar loja para alunos
-    if (document.getElementById("productsTrack")) {
+    // Recursos de compra são inicializados somente para alunos.
+    if (document.getElementById("productsTrack") && user.papel !== "admin") {
       carregarCarrinho();
       montarModalProduto();
       montarModalCarrinho();
       montarModalPagamento();
       criarBotaoCarrinho();
-      if (user.papel !== "admin") carregarProdutos();
-      else $("botaoCarrinho")?.remove();
+      carregarProdutos();
     }
 
     // Agendamentos
