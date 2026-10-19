@@ -2031,6 +2031,108 @@
   }
 
   // =====================================================
+  // EDITOR DE AVISOS NA PRÓPRIA TELA DE AVISOS (ADMIN)
+  // =====================================================
+  function configurarEditorAvisosPagina() {
+    const tools = $("avisosAdminFerramentas");
+    const form = $("avisosAdminForm");
+    if (!tools || !form) return;
+    tools.classList.remove("d-none");
+    $("avisosAdminAbrir").addEventListener("click", async () => {
+      $("avisosAdminEditor").hidden = false;
+      await carregarAvisosPaginaAdmin();
+    });
+    $("avisosAdminNovo").addEventListener("click", resetAvisoPaginaAdmin);
+    $("avisosAdminFechar").addEventListener("click", () => { $("avisosAdminEditor").hidden = true; });
+    form.addEventListener("submit", salvarAvisoPaginaAdmin);
+    document.addEventListener("tc-avisos-atualizados", carregarAvisosPaginaAdmin);
+  }
+
+  async function carregarAvisosPaginaAdmin() {
+    const list = $("avisosAdminLista");
+    if (!list) return;
+    list.replaceChildren(h("p", { class: "text-secondary small" }, "Carregando avisos..."));
+    try {
+      const avisos = await api("/admin/avisos");
+      list.replaceChildren();
+      if (!avisos.length) {
+        list.append(h("p", { class: "text-secondary small" }, "Nenhum aviso cadastrado."));
+        return;
+      }
+      avisos.forEach((aviso) => {
+        const row = h("div", { class: "border border-secondary rounded-3 p-3 mb-2 d-flex flex-wrap align-items-start justify-content-between gap-3" });
+        const details = h("div", { class: "flex-grow-1" },
+          h("strong", { class: "d-block" }, aviso.titulo),
+          h("p", { class: "small text-white-50 my-2" }, aviso.conteudo),
+          h("small", { class: "text-secondary" }, [aviso.data_evento, aviso.horario, aviso.local, aviso.categoria].filter(Boolean).join(" · "))
+        );
+        const actions = h("div", { class: "d-flex gap-2" });
+        actions.append(
+          h("button", { type: "button", class: "btn btn-sm btn-outline-light", onclick: () => editarAvisoPaginaAdmin(aviso) }, "Editar"),
+          h("button", { type: "button", class: "btn btn-sm btn-outline-danger", onclick: async () => {
+            if (!confirm("Excluir o aviso “" + aviso.titulo + "”?")) return;
+            try {
+              await api("/avisos/" + aviso.id, { method: "DELETE" });
+              await carregarAvisosPaginaAdmin();
+              document.dispatchEvent(new CustomEvent("tc-avisos-atualizados"));
+              setMsg($("avisosAdminMsg"), "Aviso excluído do calendário.", "success");
+            } catch (e) { setMsg($("avisosAdminMsg"), e.message); }
+          } }, "Excluir")
+        );
+        row.append(details, actions);
+        list.append(row);
+      });
+    } catch (e) {
+      list.replaceChildren(h("p", { class: "text-danger small" }, e.message));
+    }
+  }
+
+  function editarAvisoPaginaAdmin(aviso) {
+    $("avisosAdminId").value = aviso.id;
+    $("avisosAdminNome").value = aviso.titulo || "";
+    $("avisosAdminCategoria").value = aviso.categoria || "importante";
+    $("avisosAdminData").value = aviso.data_evento || "";
+    $("avisosAdminHorario").value = aviso.horario || "";
+    $("avisosAdminLocal").value = aviso.local || "";
+    $("avisosAdminDescricao").value = aviso.conteudo || "";
+    $("avisosAdminTitulo").textContent = "Editar aviso";
+    $("avisosAdminSalvar").textContent = "Salvar alterações";
+    $("avisosAdminEditor").hidden = false;
+    $("avisosAdminNome").focus();
+  }
+
+  function resetAvisoPaginaAdmin() {
+    $("avisosAdminForm").reset();
+    $("avisosAdminId").value = "";
+    $("avisosAdminTitulo").textContent = "Publicar aviso";
+    $("avisosAdminSalvar").textContent = "Publicar aviso";
+    setMsg($("avisosAdminMsg"), "");
+  }
+
+  async function salvarAvisoPaginaAdmin(event) {
+    event.preventDefault();
+    const id = $("avisosAdminId").value;
+    const body = {
+      titulo: $("avisosAdminNome").value.trim(),
+      categoria: $("avisosAdminCategoria").value,
+      data_evento: $("avisosAdminData").value,
+      horario: $("avisosAdminHorario").value,
+      local: $("avisosAdminLocal").value.trim(),
+      conteudo: $("avisosAdminDescricao").value.trim()
+    };
+    try {
+      await api(id ? "/avisos/" + id : "/avisos", {
+        method: id ? "PATCH" : "POST",
+        body: JSON.stringify(body)
+      });
+      resetAvisoPaginaAdmin();
+      await carregarAvisosPaginaAdmin();
+      document.dispatchEvent(new CustomEvent("tc-avisos-atualizados"));
+      setMsg($("avisosAdminMsg"), id ? "Aviso atualizado e calendário sincronizado." : "Aviso publicado no calendário.", "success");
+    } catch (e) { setMsg($("avisosAdminMsg"), e.message); }
+  }
+
+  // =====================================================
   // 14) INICIALIZAÇÃO
   // =====================================================
   async function iniciar() {
@@ -2063,11 +2165,13 @@
     // Agendamentos
     ligarAgendamento();
 
-    // Modo gerente
+    // Editor na própria aba Avisos: somente administradores.
     if (user.papel === "admin") {
       ativarModoGerente();
+      configurarEditorAvisosPagina();
     } else {
       document.querySelector('a.menu-item[href="#usuarios"]')?.remove();
+      document.getElementById("avisosAdminFerramentas")?.remove();
     }
   }
 
