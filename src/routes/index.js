@@ -265,6 +265,22 @@ r.get("/admin/pedidos", autenticar, admin, (req, res) => {
   res.json(status ? rows.all(status) : rows.all());
 });
 
+// Consulta administrativa dos tokens de retirada e respectivos pedidos.
+r.get("/admin/tokens", autenticar, admin, (_req, res) => {
+  const rows = db.prepare(`
+    SELECT t.id, t.pedido_id, t.token, t.expira_em, t.usado, t.usado_em, t.criado_em,
+      p.status AS pedido_status, p.criado_em AS pedido_criado_em,
+      u.nome AS cliente, u.email AS cliente_email,
+      pg.status AS pagamento_status
+    FROM tokens_retirada t
+    JOIN pedidos p ON p.id=t.pedido_id
+    JOIN usuarios u ON u.id=p.usuario_id
+    LEFT JOIN pagamentos pg ON pg.pedido_id=p.id
+    ORDER BY t.id DESC
+  `).all();
+  res.json(rows);
+});
+
 // Produtos
 r.get("/produtos", (req, res) => {
   const categoria = clean(req.query.categoria, 50);
@@ -722,6 +738,30 @@ r.get("/perfil/foto", autenticar, (req, res) => {
   if (!fs.existsSync(arquivo)) return res.sendStatus(404);
   res.type(path.extname(arquivo).toLowerCase() === ".png" ? "image/png" : "image/jpeg");
   res.set("Cache-Control", "private, max-age=300");
+  res.sendFile(arquivo);
+});
+
+// Upload de imagem para produtos: apenas administradores, JPG/PNG até 5 MB.
+r.post("/produtos/imagem", autenticar, admin, (req, res) => fotoUpload.single("foto")(req, res, (err) => {
+  if (err) return res.status(400).json({ erro: "Envie uma imagem JPG ou PNG de até 5 MB." });
+  if (!req.file) return bad(res, "Selecione uma imagem JPG ou PNG.");
+  const header = Buffer.alloc(8), fd = fs.openSync(req.file.path, "r");
+  fs.readSync(fd, header, 0, 8, 0); fs.closeSync(fd);
+  const valido = req.file.mimetype === "image/png"
+    ? header.subarray(0, 8).equals(Buffer.from("89504e470d0a1a0a", "hex"))
+    : header[0] === 255 && header[1] === 216 && header[2] === 255;
+  if (!valido) { fs.unlinkSync(req.file.path); return bad(res, "O arquivo não corresponde a uma imagem válida."); }
+  res.status(201).json({ imagem: "/api/produtos/imagens/" + req.file.filename });
+}));
+
+// Imagens de produtos são públicas para que a vitrine possa exibi-las.
+r.get("/produtos/imagens/:arquivo", (req, res) => {
+  const nome = path.basename(req.params.arquivo);
+  if (!/^[a-f0-9-]+\\.(jpg|jpeg|png)$/i.test(nome)) return res.sendStatus(404);
+  const arquivo = path.join(uploadDir, nome);
+  if (!fs.existsSync(arquivo)) return res.sendStatus(404);
+  res.type(path.extname(arquivo).toLowerCase() === ".png" ? "image/png" : "image/jpeg");
+  res.set("Cache-Control", "public, max-age=86400");
   res.sendFile(arquivo);
 });
 
