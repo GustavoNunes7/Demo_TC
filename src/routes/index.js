@@ -436,7 +436,7 @@ r.post("/pedidos/:id/pagamento", autenticar, (req, res) => {
   const pedidoId = positiveId(req.params.id);
   const metodo = req.body.metodo;
 
-  if (!allowed(metodo, ["pix", "cartao"]))
+  if (!allowed(metodo, ["pix", "cartao", "dinheiro"]))
     return bad(res, "Forma de pagamento inválida.");
 
   const pedido = get("pedidos", pedidoId);
