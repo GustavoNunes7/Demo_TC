@@ -11,6 +11,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   const agendaEmpty = document.getElementById("agendaEmpty");
   if (!calendarDays || !calendarMonth) return;
 
+  let statusCalendar = document.getElementById("calendarStatus");
+  if (!statusCalendar) {
+    statusCalendar = document.createElement("p");
+    statusCalendar.id = "calendarStatus";
+    statusCalendar.className = "small text-secondary mt-2 mb-0";
+    statusCalendar.setAttribute("role", "status");
+    calendarDays.insertAdjacentElement("afterend", statusCalendar);
+  }
+
   const categoriaValida = ["evento", "academico", "reuniao", "importante"];
   const nomesMeses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
   const nomesMesesCurto = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
@@ -83,8 +92,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const response = await fetch("/api/avisos", { cache: "no-store" });
       const data = await response.json().catch(() => []);
-      if (!response.ok) throw new Error("Não foi possível carregar os avisos.");
-      avisos = (Array.isArray(data) ? data : [])
+      if (!response.ok) throw new Error("A API de avisos respondeu HTTP " + response.status + ". Reinicie o servidor com a versão atual do projeto.");
+      if (!Array.isArray(data)) throw new Error("A API de avisos retornou um formato inesperado.");
+      avisos = data
         .filter(a => Number(a.publicado ?? 1) === 1)
         .map(a => ({
           id: Number(a.id),
@@ -100,9 +110,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         const [ano, mes] = dataAlvo.split("-").map(Number);
         currentDate = new Date(ano, mes - 1, 1);
       }
+      statusCalendar.textContent = avisos.length
+        ? avisos.length + " aviso(s) publicado(s)."
+        : "Nenhum aviso publicado com data válida.";
+      statusCalendar.classList.remove("text-danger");
     } catch (error) {
       console.error("Erro ao carregar avisos do calendário:", error);
       avisos = [];
+      statusCalendar.textContent = "Não foi possível carregar os avisos. " + error.message;
+      statusCalendar.classList.add("text-danger");
     }
     renderCalendar();
     renderAgenda();
