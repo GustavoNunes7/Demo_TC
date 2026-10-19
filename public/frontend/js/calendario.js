@@ -3,7 +3,6 @@
 ========================================================= */
 document.addEventListener("DOMContentLoaded", async () => {
   const calendarDays = document.getElementById("calendarDays");
-  if (calendarDays?.dataset.calendarOwner === "sistema") return;
   const calendarMonth = document.getElementById("calendarMonth");
   const previousButton = document.getElementById("calendarPrev");
   const nextButton = document.getElementById("calendarNext");
