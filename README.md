@@ -1,73 +1,59 @@
-# TechCampus
+# TechCampus - DEMO
 
-> Plataforma acadêmica desenvolvida para aproximar estudantes da AAPM, centralizando informações, benefícios, solicitações e serviços em um único ambiente.
+>## Como acessar os usuários de demonstração
 
-## 📌 Sobre o projeto
+### 1. Pré-requisitos
 
-O **TechCampus** é um sistema web criado com foco no ambiente escolar e na experiência dos alunos. A proposta é oferecer uma plataforma organizada para que estudantes possam acessar informações da AAPM, consultar benefícios, enviar documentos, acompanhar solicitações e encontrar orientações importantes.
+Antes de iniciar, instale o [Node.js](https://nodejs.org/) e extraia o projeto Demo TechCampus.
 
-O projeto também busca aplicar, na prática, conhecimentos de **Desenvolvimento de Sistemas**, incluindo desenvolvimento web, organização de interfaces, responsividade e integração com funcionalidades do sistema.
+### 2. Instalação e inicialização
 
-## 🎯 Objetivos
+Abra o terminal na pasta principal do projeto e execute os comandos abaixo, um por vez:
 
-- Facilitar o acesso dos alunos às informações da AAPM;
-- Centralizar serviços e solicitações em uma única plataforma;
-- Disponibilizar uma área para envio e acompanhamento de documentos;
-- Apresentar avisos e informações relevantes aos estudantes;
-- Organizar benefícios e produtos disponíveis;
-- Oferecer uma interface simples, moderna e responsiva;
-- Praticar conceitos de desenvolvimento web em um projeto completo.
+```bash
+npm install
+npm run seed
+npm start
+```
 
-## 🧩 Principais áreas
+- `npm install`: instala as dependências necessárias.
+- `npm run seed`: prepara o banco de dados e cadastra os usuários e dados de demonstração.
+- `npm start`: inicia o servidor da aplicação.
 
-O sistema conta com diferentes áreas para organizar a experiência do usuário:
+### 3. Acessar o sistema
 
-- **Início** — acesso às principais informações e recursos;
-- **Documentação** — envio e acompanhamento de documentos;
-- **Pedidos** — área destinada às solicitações e pedidos;
-- **Avisos** — comunicação de informações importantes;
-- **Sobre a AAPM** — informações sobre a associação;
-- **Formatura** — área relacionada às informações de formatura;
-- **Ajuda** — orientações e suporte ao usuário;
-- **Meu Perfil** — informações relacionadas à conta do estudante;
-- **Configurações** — opções de personalização e gerenciamento da conta.
+Com o servidor em execução, abra o navegador e acesse:
 
-## 🛠️ Tecnologias
+**http://localhost:3000**
 
-O projeto utiliza tecnologias voltadas ao desenvolvimento web:
+### 4. Usuários de demonstração
 
-- **HTML5**
-- **CSS3**
-- **JavaScript**
-- **Bootstrap 5.3.2**
-- **Bootstrap Icons**
+Todos os usuários de demonstração utilizam a senha `123456`.
 
-## 🎨 Interface
+| Perfil | E-mail | Senha |
+|---|---|---|
+| Aluno | `aluno@techcampus.local` | `123456` |
+| Professor | `professor@techcampus.local` | `123456` |
+| Secretaria | `secretaria@techcampus.local` | `123456` |
+| Gestor (administrador) | `gestor@techcampus.local` | `123456` |
+| Portaria | `portaria@techcampus.local` | `123456` |
 
-A interface do TechCampus utiliza uma identidade visual baseada em tons escuros, com destaque para o vermelho, buscando uma aparência moderna e consistente.
+Para entrar com outro perfil, saia da conta atual e faça login utilizando o e-mail e a senha do perfil desejado.
 
-O layout foi desenvolvido pensando em diferentes tamanhos de tela, permitindo a utilização da plataforma em computadores e dispositivos móveis.
+### 5. Testar o token de retirada e a máquina IoT
 
-## 📂 Organização
+1. Entre com o perfil de aluno.
+2. Acesse a área de produtos e solicite um item disponível.
+3. Consulte o token gerado e os detalhes do pedido.
+4. Utilize a página ou integração da máquina IoT para validar o token.
+5. Após a validação e confirmação da retirada, confira o registro do pedido e a atualização do estoque.
 
-O projeto é estruturado em áreas relacionadas à interface do sistema, páginas, estilos, scripts e recursos visuais utilizados pela plataforma.
+Os tokens são temporários e possuem validade de 15 minutos.
 
-A organização pode evoluir conforme novas funcionalidades forem implementadas.
+### Observações
 
-## 🚀 Status
-
-**Em desenvolvimento.**
-
-O TechCampus está em processo de evolução, com novas funcionalidades, melhorias de interface, ajustes de responsividade e aprimoramentos técnicos sendo realizados ao longo do desenvolvimento.
-
-## 👥 Projeto
-
-Projeto desenvolvido no contexto de **Desenvolvimento de Sistemas**, com foco na aplicação prática de conhecimentos de programação e desenvolvimento web.
-
-## 📄 Licença
-
-Este projeto possui finalidade educacional e de desenvolvimento. Consulte o repositório para informações adicionais sobre sua utilização.
-## Integração Original + Demo IoT
-
-Consulte [`MESCLA-ORIGINAL-DEMO.md`](MESCLA-ORIGINAL-DEMO.md) para configuração, fluxo de token de retirada, endpoints IoT e limites conhecidos.
-
+- A conta `gestor@techcampus.local` corresponde ao perfil de gestão administrativa da Demo.
+- Os usuários e as senhas acima são destinados exclusivamente a testes locais.
+- Se o servidor estiver em execução, mantenha o terminal aberto enquanto utiliza o sistema.
+- Caso a porta 3000 já esteja ocupada, encerre o servidor que a utiliza ou configure outra porta.
+- O funcionamento físico da máquina IoT depende da configuração do ESP32, da conexão de rede e do firmware correspondente.
