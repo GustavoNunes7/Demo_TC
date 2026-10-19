@@ -64,7 +64,7 @@ async function main() {
   ];
 
   const normalizarNome = (valor) =>
-    String(valor || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    String(valor || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const aliases = {
     caixadebolinhasdepingpong: ["bolasdepingpong"],
     "uniformeescolarbranco": ["uniformeescolarbranco"],
