@@ -1461,6 +1461,7 @@
         <ul class="nav nav-pills mb-3 gap-2">
           <li class="nav-item"><button type="button" class="nav-link active" id="tabGProd">Produtos</button></li>
           <li class="nav-item"><button type="button" class="nav-link" id="tabGPed">Pedidos</button></li>
+          <li class="nav-item"><button type="button" class="nav-link" id="tabGTok">Tokens IoT</button></li>
           <li class="nav-item"><button type="button" class="nav-link" id="tabGAvisos">Avisos</button></li>
         </ul>
         <div id="gProdutos">
@@ -1469,6 +1470,13 @@
             <button type="button" class="btn btn-danger ms-auto" id="gNovo"><i class="bi bi-plus-lg me-1"></i>Novo produto</button>
           </div>
           <div id="gProdTabela"></div>
+        </div>
+        <div id="gTokens" hidden>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <p class="text-secondary small mb-0 me-auto">Consulte os tokens de retirada e o estado de cada pedido.</p>
+            <button type="button" class="btn btn-outline-light" id="gAtualizarTokens"><i class="bi bi-arrow-clockwise me-1"></i>Atualizar tokens</button>
+          </div>
+          <div id="gTokensTabela"></div>
         </div>
         <div id="gAvisos" hidden>
           <form id="gFormAviso" class="border border-secondary rounded-3 p-3 mb-4">
@@ -1543,7 +1551,9 @@
 
     $("tabGProd").onclick = () => aba("prod");
     $("tabGPed").onclick = () => aba("ped");
+    $("tabGTok").onclick = () => aba("tokens");
     $("tabGAvisos").onclick = () => aba("avisos");
+    $("gAtualizarTokens").onclick = carregarTokensAdmin;
     $("gFormAviso").addEventListener("submit", salvarAvisoAdmin);
     $("gAvisoCancelar").onclick = resetAvisoAdmin;
     $("gAvisoAtualizar").onclick = carregarAvisosAdmin;
@@ -1571,12 +1581,40 @@
   function aba(qual) {
     $("tabGProd").classList.toggle("active", qual === "prod");
     $("tabGPed").classList.toggle("active", qual === "ped");
+    $("tabGTok").classList.toggle("active", qual === "tokens");
     $("tabGAvisos").classList.toggle("active", qual === "avisos");
     $("gProdutos").hidden = qual !== "prod";
     $("gPedidos").hidden = qual !== "ped";
+    $("gTokens").hidden = qual !== "tokens";
     $("gAvisos").hidden = qual !== "avisos";
     if (qual === "ped") carregarPedidosAdmin();
+    if (qual === "tokens") carregarTokensAdmin();
     if (qual === "avisos") carregarAvisosAdmin();
+  }
+
+  async function carregarTokensAdmin() {
+    const container = $("gTokensTabela");
+    if (!container) return;
+    container.replaceChildren(h("p", { class: "text-secondary" }, "Carregando tokens..."));
+    try {
+      const tokens = await api("/admin/tokens");
+      if (!tokens.length) {
+        container.replaceChildren(h("p", { class: "text-secondary" }, "Ainda não há tokens de retirada."));
+        return;
+      }
+      const corpo = h("tbody", {}, tokens.map((t) => h("tr", {},
+        h("td", {}, "#" + t.pedido_id),
+        h("td", {}, t.cliente || "—", h("div", { class: "small text-secondary" }, t.cliente_email || "")),
+        h("td", {}, h("code", { class: "fs-6" }, t.token)),
+        h("td", {}, STATUS[t.pedido_status] || t.pedido_status || "—"),
+        h("td", {}, PAG[t.pagamento_status] || t.pagamento_status || "Sem pagamento"),
+        h("td", {}, t.usado ? "Utilizado" : (t.expira_em && t.expira_em < Date.now() ? "Expirado" : "Ativo")),
+        h("td", {}, t.expira_em ? new Date(t.expira_em).toLocaleString("pt-BR") : "—")
+      )));
+      container.replaceChildren(tabela(["Pedido", "Aluno", "Token", "Status pedido", "Pagamento", "Estado token", "Expiração"], corpo));
+    } catch (e) {
+      container.replaceChildren(h("div", { class: "alert alert-danger" }, e.message));
+    }
   }
 
   async function carregarProdutosAdmin() {
@@ -2210,6 +2248,10 @@
     if (user.papel === "admin") {
       ativarModoGerente();
       configurarEditorAvisosPagina();
+      document.querySelector('a.menu-item[href="#pedidos"]')?.remove();
+      document.querySelector('a.menu-item[href="#meus-tokens"]')?.remove();
+      $("pedidos")?.classList.add("d-none");
+      $("meus-tokens")?.classList.add("d-none");
     } else {
       document.querySelector('a.menu-item[href="#usuarios"]')?.remove();
       document.getElementById("avisosAdminFerramentas")?.remove();
