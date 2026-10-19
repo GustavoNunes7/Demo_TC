@@ -752,9 +752,9 @@ r.get("/perfil/foto", autenticar, (req, res) => {
   res.sendFile(arquivo);
 });
 
-// Upload de imagem para produtos: apenas administradores, JPG/PNG até 5 MB.
+// Upload de imagem para produtos: apenas administradores, JPG/PNG até 20 MB.
 r.post("/produtos/imagem", autenticar, admin, (req, res) => fotoUpload.single("foto")(req, res, (err) => {
-  if (err) return res.status(400).json({ erro: "Envie uma imagem JPG ou PNG de até 5 MB." });
+  if (err) return res.status(400).json({ erro: "Envie uma imagem JPG ou PNG de até 20 MB." });
   if (!req.file) return bad(res, "Selecione uma imagem JPG ou PNG.");
   const header = Buffer.alloc(8), fd = fs.openSync(req.file.path, "r");
   fs.readSync(fd, header, 0, 8, 0); fs.closeSync(fd);
