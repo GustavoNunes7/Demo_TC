@@ -148,31 +148,48 @@
   async function carregarFoto() {
     const img = document.getElementById("profilePreview");
     if (!img || !token()) return;
+
+    // Ao trocar de conta, nunca manter a imagem da sessão anterior enquanto
+    // a API carrega ou quando o usuário atual ainda não tem foto cadastrada.
+    const avatar = document.querySelector("#userDropdown .user-avatar");
+    const objectUrlAnterior = img.dataset.objectUrl;
+    if (objectUrlAnterior) {
+      URL.revokeObjectURL(objectUrlAnterior);
+      delete img.dataset.objectUrl;
+    }
+    img.src = "../landing/images/logoTechCampus.png";
+    if (avatar) {
+      avatar.replaceChildren();
+      const icone = document.createElement("i");
+      icone.className = "bi bi-person-fill text-white fs-5";
+      avatar.append(icone);
+    }
+
     try {
       const response = await fetch("/api/perfil/foto", {
         headers: { Authorization: `Bearer ${token()}` },
         cache: "no-store"
       });
+      // 404 significa que esta conta não possui foto; manter os placeholders.
       if (!response.ok) return;
       const blob = await response.blob();
-      if (img.dataset.objectUrl) URL.revokeObjectURL(img.dataset.objectUrl);
-      const url = URL.createObjectURL(blob); img.dataset.objectUrl = url; img.src = url;
-      const avatar = document.querySelector("#userDropdown .user-avatar");
+      if (!blob.type.startsWith("image/")) return;
+      const url = URL.createObjectURL(blob);
+      img.dataset.objectUrl = url;
+      img.src = url;
       if (avatar) {
-        let avatarImg = avatar.querySelector("img");
-        if (!avatarImg) {
-          avatar.replaceChildren();
-          avatarImg = document.createElement("img");
-          avatarImg.alt = "Foto de perfil";
-          avatarImg.className = "rounded-circle";
-          avatarImg.style.width = "38px";
-          avatarImg.style.height = "38px";
-          avatarImg.style.objectFit = "cover";
-          avatar.append(avatarImg);
-        }
+        const avatarImg = document.createElement("img");
+        avatarImg.alt = "Foto de perfil";
+        avatarImg.className = "rounded-circle";
+        avatarImg.style.width = "38px";
+        avatarImg.style.height = "38px";
+        avatarImg.style.objectFit = "cover";
+        avatar.append(avatarImg);
         avatarImg.src = url;
       }
-    } catch { /* Perfil sem foto ou API temporariamente indisponível. */ }
+    } catch {
+      // Sem foto ou API indisponível: manter a imagem padrão desta conta.
+    }
   }
   function ligarGerenciamentoUsuarios() {
     const tabela = document.getElementById("tabelaUsuarios");
