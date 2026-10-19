@@ -1474,7 +1474,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           id: Number(a.id),
           titulo: String(a.titulo || "Aviso"),
           categoria: categoriaValida.includes(a.categoria) ? a.categoria : "importante",
-          data: String(a.data_evento || "").slice(0, 10),
+          data: String(a.data_evento || "").trim().slice(0, 10),
           horario: String(a.horario || ""),
           local: String(a.local || ""),
           descricao: String(a.conteudo || "")
@@ -1492,8 +1492,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderAgenda();
     aplicarFiltro("todos");
   }
+  // Botão explícito de atualização para evitar depender de cache ou navegação.
+  const refreshButton = document.createElement("button");
+  refreshButton.type = "button";
+  refreshButton.className = "btn btn-outline-secondary btn-sm ms-2";
+  refreshButton.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Atualizar calendário';
+  refreshButton.addEventListener("click", () => carregarAvisosCalendario());
+  (todayButton?.parentElement || calendarMonth?.parentElement)?.append(refreshButton);
+
   document.addEventListener("tc-avisos-atualizados", (event) => {
     carregarAvisosCalendario(event.detail?.data || "");
+  });
+  window.addEventListener("hashchange", () => {
+    if (location.hash === "#avisos") carregarAvisosCalendario();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && location.hash === "#avisos") carregarAvisosCalendario();
+  });
+  document.querySelectorAll('a[href="#avisos"]').forEach((link) => {
+    link.addEventListener("click", () => carregarAvisosCalendario());
   });
   await carregarAvisosCalendario();
 });
