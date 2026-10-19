@@ -2222,6 +2222,9 @@
       return;
     }
 
+    // Disponibiliza o papel para a navegação central bloquear telas de aluno no Admin.
+    window.tcPapelUsuario = user.papel;
+
     // Atualizar nome do usuário
     const nome = document.querySelector("#userDropdown .fw-semibold");
     const sub = document.querySelector("#userDropdown small");
