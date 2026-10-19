@@ -158,6 +158,36 @@
       }
     }
   </style>
+
+  <style>
+    .secao-gerenciamento { min-width:0; }
+    .form-admin { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:18px; padding:18px; border:1px solid #343b45; border-radius:10px; background:#11151a; }
+    .campo-admin { display:flex; flex-direction:column; gap:6px; min-width:0; }
+    .campo-admin-largo { grid-column:1/-1; }
+    .campo-admin label { color:#d8dee8; font-size:13px; font-weight:700; }
+    .campo-admin input,.campo-admin select,.campo-admin textarea { width:100%; box-sizing:border-box; border:1px solid #424b57; border-radius:7px; padding:10px 11px; background:#20252c; color:#fff; font:inherit; }
+    .campo-admin input:focus,.campo-admin select:focus,.campo-admin textarea:focus { outline:2px solid #d62828; outline-offset:1px; }
+    .acoes-admin { display:flex; flex-wrap:wrap; gap:8px; }
+    .botao-secundario { background:#303741; border:1px solid #4a535f; cursor:pointer; }
+    .botao[hidden] { display:none!important; }
+    .lista-admin-cabecalho { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:22px 0 12px; }
+    .lista-admin-cabecalho h3 { margin:0; font-size:17px; }
+    .lista-admin { display:grid; gap:10px; }
+    .item-admin { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; padding:14px; border:1px solid #303741; border-radius:9px; background:#20252c; min-width:0; }
+    .item-admin-info { min-width:0; overflow-wrap:anywhere; }
+    .item-admin-info strong { display:block; color:#fff; margin-bottom:5px; }
+    .item-admin-info p { margin:0 0 5px; color:#c0c7d1; white-space:pre-wrap; }
+    .item-admin-info small { color:#9da8b6; }
+    .item-admin-acoes { display:flex; gap:7px; flex-wrap:wrap; flex-shrink:0; }
+    .item-admin-acoes button { border:1px solid #596270; border-radius:6px; background:#303741; color:#fff; padding:7px 10px; cursor:pointer; }
+    .item-admin-acoes .excluir { background:#8f1e27; border-color:#a62a34; }
+    .mensagem-admin { margin:0; font-size:13px; color:#b7c2cf; }
+    .mensagem-admin.erro { color:#ff929b; }
+    .mensagem-admin.sucesso { color:#80d8a0; }
+    .texto-suave { color:#a7b0bc; }
+    @media(max-width:700px) { .form-admin { grid-template-columns:1fr; padding:13px; } .campo-admin-largo { grid-column:auto; } .item-admin { flex-direction:column; } .item-admin-acoes { width:100%; } .lista-admin-cabecalho { align-items:flex-start; flex-direction:column; } }
+  </style>
+
 </head>
 
 <body>
@@ -276,28 +306,40 @@
           </a>
         </div>
 
-        <div class="secao" id="produtos">
-          <h2>📦 Produtos</h2>
-
-          <p>
-            Cadastre, altere e controle os produtos disponíveis.
-          </p>
-
-          <a href="#" class="botao">
-            Gerenciar produtos
-          </a>
+        <div class="secao secao-gerenciamento" id="produtos">
+          <h2>📦 Gerenciar produtos</h2>
+          <p>Cadastre novos itens e edite os produtos já disponíveis na loja.</p>
+          <form id="formProduto" class="form-admin">
+            <input type="hidden" id="produtoId">
+            <div class="campo-admin"><label for="produtoNome">Nome</label><input id="produtoNome" required maxlength="120" placeholder="Ex.: Camiseta TechCampus"></div>
+            <div class="campo-admin"><label for="produtoCategoria">Categoria</label><select id="produtoCategoria" required><option value="uniformes">Uniformes</option><option value="esportes">Esportes</option><option value="jogos">Jogos</option><option value="epi">EPI</option><option value="acessorios">Acessórios</option><option value="outros">Outros</option></select></div>
+            <div class="campo-admin"><label for="produtoPreco">Preço (R$)</label><input id="produtoPreco" type="number" min="0" step="0.01" required placeholder="0,00"></div>
+            <div class="campo-admin"><label for="produtoEstoque">Estoque</label><input id="produtoEstoque" type="number" min="0" step="1" required value="0"></div>
+            <div class="campo-admin campo-admin-largo"><label for="produtoDescricao">Descrição</label><textarea id="produtoDescricao" rows="2" maxlength="2000" placeholder="Descrição do produto"></textarea></div>
+            <div class="campo-admin campo-admin-largo"><label for="produtoImagem">Imagem (URL/caminho)</label><input id="produtoImagem" maxlength="300" placeholder="/landing/images/produto.png"></div>
+            <div class="acoes-admin campo-admin-largo"><button class="botao" id="salvarProduto" type="submit">Adicionar produto</button><button class="botao botao-secundario" id="cancelarEdicaoProduto" type="button" hidden>Cancelar edição</button></div>
+            <p id="mensagemProduto" class="mensagem-admin campo-admin-largo" role="status"></p>
+          </form>
+          <div class="lista-admin-cabecalho"><h3>Produtos cadastrados</h3><button class="botao botao-secundario" type="button" id="atualizarProdutos">Atualizar lista</button></div>
+          <div id="listaProdutosAdmin" class="lista-admin"><p class="texto-suave">Carregando produtos...</p></div>
         </div>
 
-        <div class="secao" id="avisos">
-          <h2>📢 Avisos</h2>
-
-          <p>
-            Publique informações e comunicados para os alunos.
-          </p>
-
-          <a href="#" class="botao">
-            Gerenciar avisos
-          </a>
+        <div class="secao secao-gerenciamento" id="avisos">
+          <h2>📢 Gerenciar avisos</h2>
+          <p>Os avisos publicados aparecerão no calendário da aba Avisos para os alunos.</p>
+          <form id="formAviso" class="form-admin">
+            <input type="hidden" id="avisoId">
+            <div class="campo-admin campo-admin-largo"><label for="avisoTitulo">Título</label><input id="avisoTitulo" required maxlength="150" placeholder="Título do aviso"></div>
+            <div class="campo-admin"><label for="avisoCategoria">Categoria</label><select id="avisoCategoria" required><option value="evento">Evento</option><option value="academico">Acadêmico</option><option value="reuniao">Reunião</option><option value="importante">Importante</option></select></div>
+            <div class="campo-admin"><label for="avisoData">Data</label><input id="avisoData" type="date" required></div>
+            <div class="campo-admin"><label for="avisoHorario">Horário</label><input id="avisoHorario" type="time" value="08:00"></div>
+            <div class="campo-admin"><label for="avisoLocal">Local</label><input id="avisoLocal" maxlength="150" placeholder="Ex.: Auditório SENAI"></div>
+            <div class="campo-admin campo-admin-largo"><label for="avisoConteudo">Descrição</label><textarea id="avisoConteudo" rows="3" maxlength="5000" required placeholder="Escreva os detalhes do aviso"></textarea></div>
+            <div class="acoes-admin campo-admin-largo"><button class="botao" id="salvarAviso" type="submit">Publicar aviso</button><button class="botao botao-secundario" id="cancelarEdicaoAviso" type="button" hidden>Cancelar edição</button></div>
+            <p id="mensagemAviso" class="mensagem-admin campo-admin-largo" role="status"></p>
+          </form>
+          <div class="lista-admin-cabecalho"><h3>Avisos publicados</h3><button class="botao botao-secundario" type="button" id="atualizarAvisos">Atualizar lista</button></div>
+          <div id="listaAvisosAdmin" class="lista-admin"><p class="texto-suave">Carregando avisos...</p></div>
         </div>
 
         <div class="secao" id="documentos">
@@ -454,5 +496,66 @@
 
   <script src="/frontend/js/notificacoes.js" defer></script>
   <script src="/frontend/js/perfil-integracao.js" defer></script>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const token = () => sessionStorage.getItem("techcampus_token");
+  const headers = () => ({ "Content-Type": "application/json", Authorization: "Bearer " + token() });
+  async function request(path, options = {}) {
+    const response = await fetch("/api" + path, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
+    const data = response.status === 204 ? null : await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.erro || "Não foi possível concluir a operação.");
+    return data;
+  }
+  function mensagem(id, text, erro = false) { const el=$(id); el.textContent=text||""; el.className="mensagem-admin campo-admin-largo"+(text?(erro?" erro":" sucesso"):""); }
+  function safeText(tag, className, value) { const el=document.createElement(tag); if(className) el.className=className; el.textContent=value ?? ""; return el; }
+  const dinheiro = (centavos) => (Number(centavos||0)/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  let produtos = [];
+  async function carregarProdutosAdmin() {
+    const lista=$("listaProdutosAdmin"); lista.replaceChildren(safeText("p","texto-suave","Carregando produtos..."));
+    try {
+      produtos=await request("/admin/produtos"); lista.replaceChildren();
+      if(!produtos.length){lista.append(safeText("p","texto-suave","Nenhum produto cadastrado."));return;}
+      produtos.forEach(p=>{
+        const item=safeText("article","item-admin"); const info=safeText("div","item-admin-info");
+        info.append(safeText("strong", "", p.nome + (Number(p.ativo)===1 ? "" : " (inativo)")));
+        info.append(safeText("p","",p.descricao||"Sem descrição."));
+        info.append(safeText("small","",p.categoria+" · "+dinheiro(p.preco_centavos)+" · Estoque: "+p.estoque));
+        const actions=safeText("div","item-admin-acoes"); const edit=safeText("button","","Editar"); edit.type="button"; edit.addEventListener("click",()=>editarProduto(p));
+        const toggle=safeText("button","excluir",Number(p.ativo)===1?"Desativar":"Ativar"); toggle.type="button"; toggle.addEventListener("click",async()=>{
+          if(!confirm((Number(p.ativo)===1?"Desativar":"Ativar")+" o produto “"+p.nome+"”?"))return;
+          try{await request("/produtos/"+p.id,{method:"PATCH",body:JSON.stringify({...p,ativo:Number(p.ativo)===1?0:1})});await carregarProdutosAdmin();mensagem("mensagemProduto","Produto atualizado.");}catch(e){mensagem("mensagemProduto",e.message,true);}
+        }); actions.append(edit,toggle); item.append(info,actions); lista.append(item);
+      });
+    } catch(e){lista.replaceChildren(safeText("p","mensagem-admin erro",e.message));}
+  }
+  function editarProduto(p){ $("produtoId").value=p.id; $("produtoNome").value=p.nome||""; $("produtoCategoria").value=p.categoria||"outros"; $("produtoPreco").value=(Number(p.preco_centavos||0)/100).toFixed(2); $("produtoEstoque").value=p.estoque??0; $("produtoDescricao").value=p.descricao||""; $("produtoImagem").value=p.imagem||""; $("salvarProduto").textContent="Salvar alterações"; $("cancelarEdicaoProduto").hidden=false; mensagem("mensagemProduto","Editando produto #"+p.id); $("formProduto").scrollIntoView({behavior:"smooth",block:"center"}); }
+  function resetProduto(){ $("formProduto").reset(); $("produtoId").value=""; $("produtoEstoque").value="0"; $("salvarProduto").textContent="Adicionar produto"; $("cancelarEdicaoProduto").hidden=true; }
+  $("formProduto").addEventListener("submit",async event=>{
+    event.preventDefault(); const id=$("produtoId").value; const preco=Number($("produtoPreco").value); const estoque=Number($("produtoEstoque").value);
+    if(!Number.isFinite(preco)||preco<0||!Number.isInteger(estoque)||estoque<0){mensagem("mensagemProduto","Confira o preço e o estoque.",true);return;}
+    const payload={nome:$("produtoNome").value.trim(),categoria:$("produtoCategoria").value,preco_centavos:Math.round(preco*100),estoque,descricao:$("produtoDescricao").value.trim(),imagem:$("produtoImagem").value.trim(),ativo:1};
+    try{await request(id?"/produtos/"+id:"/produtos",{method:id?"PATCH":"POST",body:JSON.stringify(payload)});resetProduto();await carregarProdutosAdmin();mensagem("mensagemProduto",id?"Produto atualizado com sucesso.":"Produto adicionado com sucesso.");}catch(e){mensagem("mensagemProduto",e.message,true);}
+  });
+  $("cancelarEdicaoProduto").addEventListener("click",()=>{resetProduto();mensagem("mensagemProduto","Edição cancelada.");});
+  $("atualizarProdutos").addEventListener("click",carregarProdutosAdmin);
+  let avisos=[];
+  const categoriaNome={evento:"Evento",academico:"Acadêmico",reuniao:"Reunião",importante:"Importante"};
+  async function carregarAvisosAdmin(){
+    const lista=$("listaAvisosAdmin"); lista.replaceChildren(safeText("p","texto-suave","Carregando avisos..."));
+    try{avisos=await request("/admin/avisos");lista.replaceChildren();if(!avisos.length){lista.append(safeText("p","texto-suave","Nenhum aviso cadastrado."));return;}
+      avisos.forEach(a=>{const item=safeText("article","item-admin");const info=safeText("div","item-admin-info");info.append(safeText("strong","",a.titulo+(Number(a.publicado)===1?"":" (retirado)")));info.append(safeText("p","",a.conteudo));const data=a.data_evento?new Date(a.data_evento+"T12:00:00").toLocaleDateString("pt-BR"):"Sem data";info.append(safeText("small","",(categoriaNome[a.categoria]||"Aviso")+" · "+data+" · "+(a.horario||"Horário não informado")+" · "+(a.local||"Local não informado")));
+        const actions=safeText("div","item-admin-acoes");const edit=safeText("button","","Editar");edit.type="button";edit.addEventListener("click",()=>editarAviso(a));const del=safeText("button","excluir","Excluir");del.type="button";del.addEventListener("click",async()=>{if(!confirm("Excluir o aviso “"+a.titulo+"”? Ele deixará de aparecer no calendário."))return;try{await request("/avisos/"+a.id,{method:"DELETE"});await carregarAvisosAdmin();mensagem("mensagemAviso","Aviso excluído.");}catch(e){mensagem("mensagemAviso",e.message,true);}});actions.append(edit,del);item.append(info,actions);lista.append(item);});
+    }catch(e){lista.replaceChildren(safeText("p","mensagem-admin erro",e.message));}
+  }
+  function editarAviso(a){$("avisoId").value=a.id;$("avisoTitulo").value=a.titulo||"";$("avisoCategoria").value=a.categoria||"importante";$("avisoData").value=a.data_evento||"";$("avisoHorario").value=a.horario||"";$("avisoLocal").value=a.local||"";$("avisoConteudo").value=a.conteudo||"";$("salvarAviso").textContent="Salvar alterações";$("cancelarEdicaoAviso").hidden=false;mensagem("mensagemAviso","Editando aviso #"+a.id);$("formAviso").scrollIntoView({behavior:"smooth",block:"center"});}
+  function resetAviso(){$("formAviso").reset();$("avisoId").value="";$("avisoHorario").value="08:00";$("salvarAviso").textContent="Publicar aviso";$("cancelarEdicaoAviso").hidden=true;}
+  $("formAviso").addEventListener("submit",async event=>{event.preventDefault();const id=$("avisoId").value;const payload={titulo:$("avisoTitulo").value.trim(),categoria:$("avisoCategoria").value,data_evento:$("avisoData").value,horario:$("avisoHorario").value,local:$("avisoLocal").value.trim(),conteudo:$("avisoConteudo").value.trim()};try{await request(id?"/avisos/"+id:"/avisos",{method:id?"PATCH":"POST",body:JSON.stringify(payload)});resetAviso();await carregarAvisosAdmin();mensagem("mensagemAviso",id?"Aviso atualizado.":"Aviso publicado e enviado ao calendário.");}catch(e){mensagem("mensagemAviso",e.message,true);}});
+  $("cancelarEdicaoAviso").addEventListener("click",()=>{resetAviso();mensagem("mensagemAviso","Edição cancelada.");});$("atualizarAvisos").addEventListener("click",carregarAvisosAdmin);
+  document.addEventListener("DOMContentLoaded",()=>{carregarProdutosAdmin();carregarAvisosAdmin();});
+})();
+</script>
+
 </body>
 </html>
