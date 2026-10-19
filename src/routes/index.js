@@ -748,7 +748,11 @@ r.get("/perfil/foto", autenticar, (req, res) => {
   const arquivo = path.join(uploadDir, path.basename(u.foto_url));
   if (!fs.existsSync(arquivo)) return res.sendStatus(404);
   res.type(path.extname(arquivo).toLowerCase() === ".png" ? "image/png" : "image/jpeg");
-  res.set("Cache-Control", "private, max-age=300");
+  // A mesma URL é usada por contas diferentes; nunca reutilizar foto em cache
+  // ao trocar de usuário no mesmo navegador.
+  res.set("Cache-Control", "private, no-store, no-cache, must-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Vary", "Authorization, Cookie");
   res.sendFile(arquivo);
 });
 
