@@ -149,7 +149,10 @@
     const img = document.getElementById("profilePreview");
     if (!img || !token()) return;
     try {
-      const response = await fetch("/api/perfil/foto", { headers: { Authorization: `Bearer ${token()}` } });
+      const response = await fetch("/api/perfil/foto", {
+        headers: { Authorization: `Bearer ${token()}` },
+        cache: "no-store"
+      });
       if (!response.ok) return;
       const blob = await response.blob();
       if (img.dataset.objectUrl) URL.revokeObjectURL(img.dataset.objectUrl);
