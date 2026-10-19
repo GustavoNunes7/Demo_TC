@@ -1571,8 +1571,8 @@
         $("gProdFotoPreview").src = "/landing/images/logoTechCampus.png";
         return;
       }
-      if (!/^image\/(jpeg|png)$/.test(file.type) || file.size > 5 * 1024 * 1024) {
-        setMsg($("gProdMsg"), "Escolha uma foto JPG ou PNG de até 5 MB.");
+      if (!/^image\/(jpeg|png)$/.test(file.type) || file.size > 20 * 1024 * 1024) {
+        setMsg($("gProdMsg"), "Escolha uma foto JPG ou PNG de até 20 MB.");
         $("gProdFoto").value = "";
         $("gProdFotoPreview").src = "/landing/images/logoTechCampus.png";
         return;
@@ -1754,7 +1754,7 @@
     try {
       const arquivo = $("gProdFoto").files?.[0];
       if (arquivo) {
-        if (!/^image\/(jpeg|png)$/.test(arquivo.type) || arquivo.size > 5 * 1024 * 1024)
+        if (!/^image\/(jpeg|png)$/.test(arquivo.type) || arquivo.size > 20 * 1024 * 1024)
           throw new Error("Escolha uma foto JPG ou PNG de até 5 MB.");
         const dados = new FormData();
         dados.append("foto", arquivo);
