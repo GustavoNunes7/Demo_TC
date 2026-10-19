@@ -757,7 +757,7 @@ r.post("/produtos/imagem", autenticar, admin, (req, res) => fotoUpload.single("f
 // Imagens de produtos são públicas para que a vitrine possa exibi-las.
 r.get("/produtos/imagens/:arquivo", (req, res) => {
   const nome = path.basename(req.params.arquivo);
-  if (!/^[a-f0-9-]+\\.(jpg|jpeg|png)$/i.test(nome)) return res.sendStatus(404);
+  if (!/^[a-f0-9-]+\.(jpg|jpeg|png)$/i.test(nome)) return res.sendStatus(404);
   const arquivo = path.join(uploadDir, nome);
   if (!fs.existsSync(arquivo)) return res.sendStatus(404);
   res.type(path.extname(arquivo).toLowerCase() === ".png" ? "image/png" : "image/jpeg");
