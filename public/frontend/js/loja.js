@@ -130,8 +130,17 @@
 
   function ligarCards() {
     const mapa = new Map(produtos.map((p) => [norm(p.nome), p]));
+    const usados = new Set();
+    const aliases = {
+      caixadebolinhasdepingpong: ["bolasdepingpong", "bolinhasdepingpong"],
+      bolinhasdepingpong: ["caixadebolinhasdepingpong", "bolasdepingpong"],
+      uniformeescolarbranco: ["camisaescolarbranca"],
+      uniformeescolarpreto: ["camisaescolarpreta"],
+      jalecomecanica: ["jalecoparamecanica"],
+      oculosdeprotecao: ["oculosprotecao"],
+    };
     document
-      .querySelectorAll("#productsTrack .product-slide")
+      .querySelectorAll("#productsTrack .product-slide:not([data-tc-dinamico='1'])")
       .forEach((card) => {
         const btn = card.querySelector("button");
         if (!btn) return;
@@ -140,14 +149,6 @@
           btn.dataset.original = btn.textContent.trim();
 
         const nomeCard = norm(card.querySelector("h5")?.textContent);
-        const aliases = {
-          caixadebolinhasdepingpong: ["bolasdepingpong", "bolinhasdepingpong"],
-          bolinhasdepingpong: ["caixadebolinhasdepingpong", "bolasdepingpong"],
-          uniformeescolarbranco: ["camisaescolarbranca"],
-          uniformeescolarpreto: ["camisaescolarpreta"],
-          jalecomecanica: ["jalecoparamecanica"],
-          oculosdeprotecao: ["oculosprotecao"],
-        };
         let p = mapa.get(nomeCard);
         if (!p) {
           const candidatos = new Set(aliases[nomeCard] || []);
@@ -163,6 +164,7 @@
           return;
         }
 
+        usados.add(p.id);
         const por = card.querySelector(".preco-por");
         if (por && p.preco_centavos > 0)
           por.textContent = "Por " + brl(p.preco_centavos);
@@ -183,6 +185,35 @@
 
         btn.onclick = () => abrirModalProduto(p);
       });
+
+    // Produtos criados no painel administrativo também entram na vitrine.
+    const track = $("productsTrack");
+    if (!track) return;
+    track.querySelectorAll(".product-slide[data-tc-dinamico='1']").forEach((card) => card.remove());
+    produtos.filter((p) => !usados.has(p.id)).forEach((p) => {
+      const slide = h("div", { class: "product-slide", "data-category": norm(p.categoria), "data-tc-dinamico": "1" });
+      const card = h("div", { class: "card bg-dark text-white h-100 border-secondary rounded-3 p-3 product-card" });
+      const imageBox = h("div", { class: "text-center my-3 product-img-box" });
+      const image = h("img", { class: "img-fluid", alt: p.nome, src: p.imagem || "/landing/images/logoTechCampus.png" });
+      image.style.maxHeight = "160px";
+      image.style.objectFit = "contain";
+      image.addEventListener("error", () => { image.src = "/landing/images/logoTechCampus.png"; }, { once: true });
+      imageBox.append(image);
+      const body = h("div", { class: "card-body d-flex flex-column p-0 text-start" });
+      body.append(h("h5", { class: "fw-bold mb-1" }, p.nome));
+      body.append(h("p", { class: "text-secondary small mb-3" }, p.descricao || "Produto disponibilizado pela AAPM."));
+      const footer = h("div", { class: "mt-auto" });
+      footer.append(h("strong", { class: "preco-por d-block" }, "Por " + brl(p.preco_centavos)));
+      const button = h("button", { class: "btn btn-outline-danger text-white w-100 mt-3", type: "button" }, "Comprar agora");
+      button.disabled = Number(p.estoque) < 1 || Number(p.preco_centavos) <= 0;
+      button.textContent = Number(p.estoque) < 1 ? "Esgotado" : Number(p.preco_centavos) <= 0 ? "Em breve" : "Comprar agora";
+      if (!button.disabled) button.addEventListener("click", () => abrirModalProduto(p));
+      footer.append(button);
+      body.append(footer);
+      card.append(imageBox, body);
+      slide.append(card);
+      track.append(slide);
+    });
   }
 
   // =====================================================
