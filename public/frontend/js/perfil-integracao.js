@@ -29,7 +29,8 @@
       <section class="tc-photo-editor" role="dialog" aria-modal="true" aria-labelledby="tcPhotoEditorTitle">
         <header><h2 id="tcPhotoEditorTitle">Editar foto de perfil</h2><button type="button" class="tc-photo-close" aria-label="Fechar">×</button></header>
         <p class="tc-photo-hint">Ajuste o enquadramento. A foto será salva em formato quadrado.</p>
-        <div class="tc-photo-stage"><canvas width="320" height="320" aria-label="Pré-visualização da foto cortada"></canvas></div>
+        <div class="tc-photo-stage" title="Arraste a foto com o mouse ou toque para ajustar o enquadramento"><canvas width="320" height="320" aria-label="Pré-visualização da foto cortada; arraste para posicionar"></canvas></div>
+        <p class="tc-photo-hint">Dica: clique e arraste a imagem para posicioná-la dentro do quadrado.</p>
         <label>Zoom <input class="tc-photo-zoom" type="range" min="1" max="3" step="0.05" value="1"></label>
         <label>Posição horizontal <input class="tc-photo-x" type="range" min="-1" max="1" step="0.01" value="0"></label>
         <label>Posição vertical <input class="tc-photo-y" type="range" min="-1" max="1" step="0.01" value="0"></label>
@@ -51,7 +52,7 @@
         .tc-photo-editor header h2{font-size:1.2rem;margin:0}.tc-photo-editor button{border:1px solid #555e6b;background:#242a33;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer}
         .tc-photo-editor button:focus-visible,.tc-photo-editor input:focus-visible{outline:2px solid #e53945;outline-offset:2px}
         .tc-photo-editor .tc-photo-save{background:#bd2f39;border-color:#bd2f39}.tc-photo-editor .tc-photo-hint,.tc-photo-editor .tc-photo-status{font-size:.88rem;color:#aeb8c6}
-        .tc-photo-stage{width:min(320px,100%);aspect-ratio:1;margin:12px auto;background:#090b0e;border-radius:12px;overflow:hidden}.tc-photo-stage canvas{display:block;width:100%;height:100%}
+        .tc-photo-stage{width:min(320px,100%);aspect-ratio:1;margin:12px auto;background:#090b0e;border-radius:12px;overflow:hidden}.tc-photo-stage canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}.tc-photo-stage canvas:active{cursor:grabbing}
         .tc-photo-editor label{display:block;font-size:.9rem;margin:12px 0}.tc-photo-editor input[type=range]{display:block;width:100%;accent-color:#d33843}
         .tc-photo-editor footer{justify-content:flex-end;margin-top:16px}
       `;
@@ -66,6 +67,7 @@
     const posY = modal.querySelector(".tc-photo-y");
     const status = modal.querySelector(".tc-photo-status");
     let rotation = 0, flipped = false, closed = false;
+    let dragging = false, dragStartX = 0, dragStartY = 0, dragOriginX = 0, dragOriginY = 0;
     const close = () => { if (closed) return; closed = true; URL.revokeObjectURL(url); modal.remove(); };
     const render = () => {
       if (!image.complete || !image.naturalWidth) return;
@@ -85,6 +87,36 @@
     image.onerror = () => { status.textContent = "Não foi possível abrir esta imagem."; };
     image.src = url;
     [zoom, posX, posY].forEach(el => el.addEventListener("input", render));
+    // Arraste direto sobre a prévia para posicionar a foto, como em editores de imagem.
+    canvas.addEventListener("pointerdown", event => {
+      if (event.button !== 0 && event.pointerType === "mouse") return;
+      dragging = true;
+      dragStartX = event.clientX;
+      dragStartY = event.clientY;
+      dragOriginX = Number(posX.value);
+      dragOriginY = Number(posY.value);
+      canvas.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+    canvas.addEventListener("pointermove", event => {
+      if (!dragging) return;
+      const rect = canvas.getBoundingClientRect();
+      const angle = ((rotation % 360) + 360) % 360;
+      const rw = angle === 90 || angle === 270 ? image.naturalHeight : image.naturalWidth;
+      const rh = angle === 90 || angle === 270 ? image.naturalWidth : image.naturalHeight;
+      const scale = Math.max(320 / rw, 320 / rh) * Number(zoom.value);
+      const width = image.naturalWidth * scale;
+      const height = image.naturalHeight * scale;
+      const dx = (event.clientX - dragStartX) * 320 / Math.max(1, rect.width);
+      const dy = (event.clientY - dragStartY) * 320 / Math.max(1, rect.height);
+      posX.value = String(Math.max(-1, Math.min(1, dragOriginX + dx / Math.max(1, (width - 320) / 2))));
+      posY.value = String(Math.max(-1, Math.min(1, dragOriginY + dy / Math.max(1, (height - 320) / 2))));
+      render();
+    });
+    const stopDragging = () => { dragging = false; };
+    canvas.addEventListener("pointerup", stopDragging);
+    canvas.addEventListener("pointercancel", stopDragging);
+    canvas.addEventListener("lostpointercapture", stopDragging);
     modal.querySelector(".tc-photo-rotate").addEventListener("click", () => { rotation = (rotation + 90) % 360; render(); });
     modal.querySelector(".tc-photo-flip").addEventListener("click", () => { flipped = !flipped; render(); });
     modal.querySelector(".tc-photo-reset").addEventListener("click", () => { zoom.value = "1"; posX.value = "0"; posY.value = "0"; rotation = 0; flipped = false; render(); });
@@ -287,8 +319,8 @@
       foto.dataset.apiWired = "1";
       foto.addEventListener("change", async () => {
         const arquivo = foto.files?.[0]; if (!arquivo) return;
-        if (!/^image\/(jpeg|png)$/.test(arquivo.type) || arquivo.size > 5 * 1024 * 1024) {
-          avisar("Escolha uma imagem JPG ou PNG de até 5 MB.", true); foto.value = ""; return;
+        if (!/^image\/(jpeg|png)$/.test(arquivo.type) || arquivo.size > 20 * 1024 * 1024) {
+          avisar("Escolha uma imagem JPG ou PNG de até 20 MB.", true); foto.value = ""; return;
         }
         await editarFotoAntesDeEnviar(arquivo, foto);
         foto.value = "";
