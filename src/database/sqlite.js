@@ -1,120 +1,76 @@
-const path = require('path');
-const Database = require('better-sqlite3');
-
-const dbPath = path.join(__dirname, '../../techcampus.db');
+const Database = require("better-sqlite3");
+const path = require("path");
+const fs = require("fs");
+const dbPath = path.resolve(
+  process.env.DB_PATH || path.join(__dirname, "../../techcampus.db"),
+);
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 const db = new Database(dbPath);
-db.pragma('foreign_keys = ON');
-db.pragma('journal_mode = WAL');
-
-function initDatabase() {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL,
-      role TEXT NOT NULL CHECK(role IN ('aluno','professor','secretaria','gestor','portaria')),
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS notices (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      body TEXT NOT NULL,
-      category TEXT NOT NULL DEFAULT 'Geral',
-      audience TEXT NOT NULL DEFAULT 'todos',
-      created_by INTEGER,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(created_by) REFERENCES users(id) ON DELETE SET NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      description TEXT NOT NULL,
-      category TEXT NOT NULL,
-      stock INTEGER NOT NULL DEFAULT 0,
-      image TEXT,
-      available INTEGER NOT NULL DEFAULT 1
-    );
-
-    CREATE TABLE IF NOT EXISTS requests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      product_id INTEGER NOT NULL,
-      status TEXT NOT NULL DEFAULT 'Pendente',
-      token TEXT UNIQUE,
-      token_expires_at TEXT,
-      used_at TEXT,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE RESTRICT
-    );
-
-    CREATE TABLE IF NOT EXISTS documents (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      original_name TEXT NOT NULL,
-      stored_name TEXT NOT NULL,
-      mime_type TEXT NOT NULL,
-      size INTEGER NOT NULL,
-      status TEXT NOT NULL DEFAULT 'Enviado',
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS events (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      description TEXT,
-      event_date TEXT NOT NULL,
-      vacancies INTEGER NOT NULL DEFAULT 0,
-      created_by INTEGER,
-      FOREIGN KEY(created_by) REFERENCES users(id) ON DELETE SET NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS event_registrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      event_id INTEGER NOT NULL,
-      user_id INTEGER NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(event_id, user_id),
-      FOREIGN KEY(event_id) REFERENCES events(id) ON DELETE CASCADE,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS attendance (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      student_id INTEGER NOT NULL,
-      professor_id INTEGER NOT NULL,
-      class_name TEXT NOT NULL,
-      attendance_date TEXT NOT NULL,
-      present INTEGER NOT NULL DEFAULT 1,
-      FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY(professor_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS absence_requests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      student_id INTEGER NOT NULL,
-      reason TEXT NOT NULL,
-      document_id INTEGER,
-      status TEXT NOT NULL DEFAULT 'Em análise',
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE SET NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS notifications (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      title TEXT NOT NULL,
-      message TEXT NOT NULL,
-      read INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-    );
-  `);
-}
-
-module.exports = { db, initDatabase };
+db.pragma("journal_mode = WAL");
+db.pragma("foreign_keys = ON");
+db.exec(`
+CREATE TABLE IF NOT EXISTS usuarios (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, email TEXT NOT NULL UNIQUE,
+ senha_hash TEXT NOT NULL, papel TEXT NOT NULL DEFAULT 'aluno' CHECK(papel IN ('aluno','admin')),
+ turma TEXT, telefone TEXT, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS recuperacoes (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+ token_hash TEXT NOT NULL UNIQUE, expira_em INTEGER NOT NULL, usado INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS produtos (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, descricao TEXT DEFAULT '',
+ categoria TEXT NOT NULL, preco_centavos INTEGER NOT NULL DEFAULT 0 CHECK(preco_centavos >= 0),
+ estoque INTEGER NOT NULL DEFAULT 0 CHECK(estoque >= 0), imagem TEXT, ativo INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE IF NOT EXISTS pedidos (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+ status TEXT NOT NULL DEFAULT 'pendente' CHECK(status IN ('pendente','aprovado','rejeitado','entregue','cancelado')),
+ observacao TEXT DEFAULT '', criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS itens_pedido (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, pedido_id INTEGER NOT NULL REFERENCES pedidos(id) ON DELETE CASCADE,
+ produto_id INTEGER NOT NULL REFERENCES produtos(id), quantidade INTEGER NOT NULL CHECK(quantidade > 0),
+ preco_unitario_centavos INTEGER NOT NULL CHECK(preco_unitario_centavos >= 0)
+);
+CREATE TABLE IF NOT EXISTS pagamentos (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ pedido_id INTEGER NOT NULL UNIQUE REFERENCES pedidos(id) ON DELETE CASCADE,
+ metodo TEXT NOT NULL CHECK(metodo IN ('pix','cartao')),
+ valor_centavos INTEGER NOT NULL CHECK(valor_centavos >= 0),
+ status TEXT NOT NULL DEFAULT 'pendente' CHECK(status IN ('pendente','confirmado','cancelado')),
+ codigo TEXT,
+ criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS documentos (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+ nome TEXT NOT NULL, arquivo TEXT NOT NULL, mime TEXT NOT NULL, tamanho INTEGER NOT NULL,
+ status TEXT NOT NULL DEFAULT 'pendente' CHECK(status IN ('pendente','aprovado','rejeitado')),
+ observacao TEXT DEFAULT '', criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS avisos (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, titulo TEXT NOT NULL, conteudo TEXT NOT NULL,
+ publicado INTEGER NOT NULL DEFAULT 1, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS agendamentos (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+ recurso TEXT NOT NULL, inicio TEXT NOT NULL, fim TEXT NOT NULL,
+ status TEXT NOT NULL DEFAULT 'pendente' CHECK(status IN ('pendente','aprovado','rejeitado','cancelado')),
+ criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS chamados (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+ assunto TEXT NOT NULL, mensagem TEXT NOT NULL,
+ status TEXT NOT NULL DEFAULT 'aberto' CHECK(status IN ('aberto','em_andamento','resolvido')),
+ resposta TEXT DEFAULT '', criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS formatura (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, titulo TEXT NOT NULL, descricao TEXT NOT NULL,
+ data_evento TEXT, publicado INTEGER NOT NULL DEFAULT 1, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+`);
+// Migrações compatíveis com bancos existentes da versão original.
+const colunasUsuarios = db.prepare("PRAGMA table_info(usuarios)").all().map((c) => c.name);
+if (!colunasUsuarios.includes("ativo")) db.exec("ALTER TABLE usuarios ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1");
+if (!colunasUsuarios.includes("foto_url")) db.exec("ALTER TABLE usuarios ADD COLUMN foto_url TEXT");
+module.exports = { db, ready: Promise.resolve() };

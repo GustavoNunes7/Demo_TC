@@ -1,19 +1,145 @@
-const bcrypt=require('bcryptjs');
-const {db,initDatabase}=require('./src/database/sqlite');
-initDatabase();
-const users=[
- ['Usuário Aluno','aluno@techcampus.local','123456','aluno'],
- ['Professor TechCampus','professor@techcampus.local','123456','professor'],
- ['Secretaria TechCampus','secretaria@techcampus.local','123456','secretaria'],
- ['Gestor TechCampus','gestor@techcampus.local','123456','gestor'],
- ['Portaria TechCampus','portaria@techcampus.local','123456','portaria']
-];
-const insUser=db.prepare('INSERT OR IGNORE INTO users(name,email,password,role) VALUES(?,?,?,?)');
-for(const u of users) insUser.run(u[0],u[1],bcrypt.hashSync(u[2],10),u[3]);
-const count=db.prepare('SELECT COUNT(*) c FROM products').get().c;
-if(!count){const ins=db.prepare('INSERT INTO products(name,description,category,stock,image) VALUES(?,?,?,?,?)');ins.run('Uniforme Escolar','Camisa oficial da rede. Conforto e identidade para o dia a dia escolar.','Uniformes',25,'uniforme');ins.run('Bolinha de Ping Pong','Bolinha oficial para treinos e campeonatos internos.','Esportes',43,'pingpong');ins.run('Bola de Futebol','Bola oficial para jogos e treinamentos.','Esportes',8,'futebol');ins.run('Boné TechCampus','Boné institucional para alunos e colaboradores.','Acessórios',9,'bone');}
-const noticeCount=db.prepare('SELECT COUNT(*) c FROM notices').get().c;
-if(!noticeCount){const gestor=db.prepare(`SELECT id FROM users WHERE role='gestor' LIMIT 1`).get();const p=db.prepare('INSERT INTO notices(title,body,category,audience,created_by) VALUES(?,?,?,?,?)');p.run('Novo aviso da AAPM','Confira as novidades sobre benefícios e atividades.','Aviso geral','todos',gestor.id);p.run('Semana de Integração 2026','Participe da semana de integração e conheça novas oportunidades.','Evento','todos',gestor.id);p.run('Período de solicitação de uniformes','Fique atento às datas para solicitar seu uniforme com desconto.','Uniformes','aluno',gestor.id);}
-const evCount=db.prepare('SELECT COUNT(*) c FROM events').get().c;
-if(!evCount){const gestor=db.prepare(`SELECT id FROM users WHERE role='gestor' LIMIT 1`).get();const e=db.prepare('INSERT INTO events(title,description,event_date,vacancies,created_by) VALUES(?,?,?,?,?)');e.run('Semana de Integração 2026','Atividades e palestras para a comunidade escolar.','2026-09-15 09:00',100,gestor.id);e.run('Palestra de Tecnologia','Encontro sobre carreira e inovação.','2026-09-25 14:00',60,gestor.id);}
-console.log('Banco TechCampus preparado.');
+
+require("dotenv").config();
+
+const bcrypt = require("bcryptjs");
+const { db } = require("./src/database/sqlite");
+
+async function main() {
+  // ======================================================
+  // USUÁRIO DE TESTE
+  // ======================================================
+
+  const email = "teste@techcampus.com";
+  const senha = "123456!";
+
+  const hash = await bcrypt.hash(senha, 12);
+
+  const existe = db
+    .prepare("SELECT id FROM usuarios WHERE email = ?")
+    .get(email);
+
+  if (!existe) {
+    // Cria o usuário de teste
+    db.prepare(`
+      INSERT INTO usuarios
+      (nome, email, senha_hash, papel, turma, telefone)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      "Aluno Teste",
+      email,
+      hash,
+      "aluno",
+      "Turma de Teste",
+      ""
+    );
+
+    console.log("Usuário de teste criado.");
+  } else {
+    // Atualiza a senha caso o usuário já exista
+    db.prepare(`
+      UPDATE usuarios
+      SET senha_hash = ?
+      WHERE email = ?
+    `).run(hash, email);
+
+    console.log("Usuário de teste já existia. Senha atualizada.");
+  }
+
+  // ======================================================
+  // PRODUTOS
+  // ======================================================
+
+  const products = [
+    [
+      "Uniforme Escolar Branco",
+      "Camiseta escolar branca",
+      "uniformes",
+      0,
+      30,
+      "/landing/images/camisa.png",
+    ],
+    [
+      "Uniforme Escolar Preto",
+      "Camiseta escolar preta",
+      "uniformes",
+      0,
+      30,
+      "/landing/images/uniforme_preto.png",
+    ],
+    [
+      "Bolas de Ping Pong",
+      "Conjunto de bolas",
+      "esportes",
+      0,
+      20,
+      "/landing/images/pingpong.png",
+    ],
+    [
+      "Bola de Futebol",
+      "Bola para prática esportiva",
+      "esportes",
+      0,
+      10,
+      "/landing/images/boladefutebol.png",
+    ],
+    [
+      "Bola de Vôlei",
+      "Bola para prática esportiva",
+      "esportes",
+      0,
+      10,
+      "/landing/images/boladevolei.png",
+    ],
+    [
+      "Raquete de Ping Pong",
+      "Raquete para uso na escola",
+      "jogos",
+      0,
+      12,
+      "/landing/images/raquete.png",
+    ],
+  ];
+
+  const stmt = db.prepare(`
+    INSERT INTO produtos
+    (nome, descricao, categoria, preco_centavos, estoque, imagem)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+  const count = db
+    .prepare("SELECT COUNT(*) AS n FROM produtos")
+    .get().n;
+
+  if (!count) {
+    db.transaction(() => {
+      products.forEach((product) => {
+        stmt.run(...product);
+      });
+    })();
+
+    console.log("Produtos de teste inseridos.");
+  } else {
+    console.log("Produtos já existem. Nenhum produto foi duplicado.");
+  }
+
+  // ======================================================
+  // RESULTADO
+  // ======================================================
+
+  console.log("");
+  console.log("======================================");
+  console.log("       SEED CONCLUÍDO COM SUCESSO");
+  console.log("======================================");
+  console.log("");
+  console.log("Login de teste:");
+  console.log("  E-mail: teste@techcampus.com");
+  console.log("  Senha:  123456!");
+  console.log("");
+}
+
+main().catch((err) => {
+  console.error("");
+  console.error("Erro no seed:", err);
+  process.exit(1);
+});
+

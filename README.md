@@ -1,101 +1,73 @@
-# TechCampus — COD New Era
+# TechCampus
 
-Versão completa do protótipo Web do TechCampus, mantendo a estrutura de projeto baseada no modelo utilizado pela equipe:
+> Plataforma acadêmica desenvolvida para aproximar estudantes da AAPM, centralizando informações, benefícios, solicitações e serviços em um único ambiente.
 
-```text
-TechCampus/
-├── public/
-│   ├── images/
-│   ├── index.html
-│   ├── script.js
-│   └── styles.css
-├── src/
-│   ├── database/
-│   │   └── sqlite.js
-│   ├── middlewares/
-│   │   └── auth.js
-│   ├── models/
-│   │   ├── productModel.js
-│   │   ├── requestModel.js
-│   │   └── userModel.js
-│   └── routes/
-│       └── index.js
-├── uploads/
-├── .env
-├── .env.example
-├── .gitignore
-├── package.json
-├── README.md
-├── seed.js
-├── server.js
-└── techcampus.db   (criado automaticamente)
-```
+## 📌 Sobre o projeto
 
-## Tecnologias
+O **TechCampus** é um sistema web criado com foco no ambiente escolar e na experiência dos alunos. A proposta é oferecer uma plataforma organizada para que estudantes possam acessar informações da AAPM, consultar benefícios, enviar documentos, acompanhar solicitações e encontrar orientações importantes.
 
-- HTML5, CSS3 e JavaScript
-- Node.js + Express
-- SQLite
-- Bootstrap não é obrigatório neste protótipo; o visual foi reproduzido com CSS próprio para manter a identidade das telas do Figma.
-- Sessão de login com `express-session`
-- Upload com `multer`
-- Senhas com `bcryptjs`
-- Integração preparada para a Máquina IoT via API REST
+O projeto também busca aplicar, na prática, conhecimentos de **Desenvolvimento de Sistemas**, incluindo desenvolvimento web, organização de interfaces, responsividade e integração com funcionalidades do sistema.
 
-## Instalação
+## 🎯 Objetivos
 
-1. Instale o Node.js.
-2. Abra o terminal dentro da pasta do projeto.
-3. Execute:
+- Facilitar o acesso dos alunos às informações da AAPM;
+- Centralizar serviços e solicitações em uma única plataforma;
+- Disponibilizar uma área para envio e acompanhamento de documentos;
+- Apresentar avisos e informações relevantes aos estudantes;
+- Organizar benefícios e produtos disponíveis;
+- Oferecer uma interface simples, moderna e responsiva;
+- Praticar conceitos de desenvolvimento web em um projeto completo.
 
-```bash
-npm install
-npm run seed
-npm start
-```
+## 🧩 Principais áreas
 
-4. Abra `http://localhost:3000`.
+O sistema conta com diferentes áreas para organizar a experiência do usuário:
 
-## Usuários de demonstração
+- **Início** — acesso às principais informações e recursos;
+- **Documentação** — envio e acompanhamento de documentos;
+- **Pedidos** — área destinada às solicitações e pedidos;
+- **Avisos** — comunicação de informações importantes;
+- **Sobre a AAPM** — informações sobre a associação;
+- **Formatura** — área relacionada às informações de formatura;
+- **Ajuda** — orientações e suporte ao usuário;
+- **Meu Perfil** — informações relacionadas à conta do estudante;
+- **Configurações** — opções de personalização e gerenciamento da conta.
 
-Todos usam a senha `123456`:
+## 🛠️ Tecnologias
 
-- aluno@techcampus.local
-- professor@techcampus.local
-- secretaria@techcampus.local
-- gestor@techcampus.local
-- portaria@techcampus.local
+O projeto utiliza tecnologias voltadas ao desenvolvimento web:
 
-## Funcionalidades incluídas
+- **HTML5**
+- **CSS3**
+- **JavaScript**
+- **Bootstrap 5.3.2**
+- **Bootstrap Icons**
 
-- Login e perfis: Aluno, Professor, Secretaria, Gestor e Portaria
-- Dashboard personalizado
-- Avisos gerais
-- Produtos disponíveis
-- Solicitação de materiais
-- Token de retirada
-- Meus pedidos
-- Documentos com upload PDF/JPG/PNG até 10 MB
-- Eventos e inscrições
-- Controle de frequência
-- Solicitação de compensação de ausência
-- Painel administrativo e indicadores
-- Notificações
-- Página da Máquina IoT
-- Endpoints `/api/iot/validate` e `/api/iot/confirm` para o ESP32
+## 🎨 Interface
 
-## IoT
+A interface do TechCampus utiliza uma identidade visual baseada em tons escuros, com destaque para o vermelho, buscando uma aparência moderna e consistente.
 
-O fluxo previsto é:
+O layout foi desenvolvido pensando em diferentes tamanhos de tela, permitindo a utilização da plataforma em computadores e dispositivos móveis.
 
-```text
-TechCampus → token → ESP32 → API → validação → servo/motor → sensor → confirmação → estoque
-```
+## 📂 Organização
 
-A máquina não fica presa a um token fixo. O token é criado por uma solicitação no sistema e pode ser validado pela API.
+O projeto é estruturado em áreas relacionadas à interface do sistema, páginas, estilos, scripts e recursos visuais utilizados pela plataforma.
 
-## Importante
+A organização pode evoluir conforme novas funcionalidades forem implementadas.
 
-O projeto não utiliza PHP. O back-end foi estruturado em Node.js/Express, com SQLite como banco de dados.
+## 🚀 Status
 
-A integração física com ESP32 depende da implementação do firmware e da rede Wi-Fi. O Web já possui os endpoints necessários para essa próxima etapa.
+**Em desenvolvimento.**
+
+O TechCampus está em processo de evolução, com novas funcionalidades, melhorias de interface, ajustes de responsividade e aprimoramentos técnicos sendo realizados ao longo do desenvolvimento.
+
+## 👥 Projeto
+
+Projeto desenvolvido no contexto de **Desenvolvimento de Sistemas**, com foco na aplicação prática de conhecimentos de programação e desenvolvimento web.
+
+## 📄 Licença
+
+Este projeto possui finalidade educacional e de desenvolvimento. Consulte o repositório para informações adicionais sobre sua utilização.
+## Integração Original + Demo IoT
+
+Consulte [`MESCLA-ORIGINAL-DEMO.md`](MESCLA-ORIGINAL-DEMO.md) para configuração, fluxo de token de retirada, endpoints IoT e limites conhecidos.
+

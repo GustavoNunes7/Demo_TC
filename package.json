@@ -1,19 +1,21 @@
 {
   "name": "techcampus",
   "version": "1.0.0",
-  "description": "TechCampus - plataforma web integrada a uma maquina IoT da AAPM",
-  "main": "server.js",
+  "description": "Backend do TechCampus - AAPM",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "admin:create": "node seed-admin.js",
     "seed": "node seed.js"
   },
   "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "better-sqlite3": "^12.2.0",
-    "express": "^5.1.0",
-    "express-session": "^1.18.2",
-    "multer": "^2.0.2",
-    "dotenv": "^17.2.1"
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1"
   }
 }
