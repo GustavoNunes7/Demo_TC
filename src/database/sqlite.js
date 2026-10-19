@@ -76,6 +76,11 @@ if (!colunasAvisos.includes("data_evento")) db.exec("ALTER TABLE avisos ADD COLU
 if (!colunasAvisos.includes("horario")) db.exec("ALTER TABLE avisos ADD COLUMN horario TEXT");
 if (!colunasAvisos.includes("local")) db.exec("ALTER TABLE avisos ADD COLUMN local TEXT");
 
+// Avisos antigos foram criados antes de existir data_evento. Para que não
+// desapareçam do calendário, usar a data de criação como data inicial.
+// O administrador ainda pode ajustar a data pelo formulário de edição.
+db.exec("UPDATE avisos SET data_evento = substr(criado_em, 1, 10) WHERE (data_evento IS NULL OR trim(data_evento) = '') AND criado_em IS NOT NULL AND length(criado_em) >= 10");
+
 // Migração compatível: a interface da loja oferece PIX, cartão e dinheiro.
 const pagamentosSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='pagamentos'").get()?.sql || "";
 if (!pagamentosSql.includes("'dinheiro'")) {

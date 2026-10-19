@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           id: Number(a.id),
           titulo: String(a.titulo || "Aviso"),
           categoria: categoriaValida.includes(a.categoria) ? a.categoria : "importante",
-          data: String(a.data_evento || "").trim().slice(0, 10),
+          data: String(a.data_evento || a.criado_em || "").trim().slice(0, 10),
           horario: String(a.horario || ""),
           local: String(a.local || ""),
           descricao: String(a.conteudo || "")
