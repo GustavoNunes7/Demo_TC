@@ -697,7 +697,7 @@ r.patch("/notificacoes/:id/lida", autenticar, (req, res) => {
   res.json({ ok: true });
 });
 
-// Documentos: arquivos privados, acesso autenticado, PDF/JPG/PNG até 10 MB
+// Documentos: arquivos privados, acesso autenticado, PDF/JPG/PNG até 50 MB
 const uploadDir = path.resolve(__dirname, "../../uploads");
 fs.mkdirSync(uploadDir, { recursive: true });
 const upload = multer({
@@ -709,7 +709,7 @@ const upload = multer({
         crypto.randomUUID() + path.extname(file.originalname).toLowerCase(),
       ),
   }),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (_req, file, cb) =>
     cb(
       null,
@@ -721,13 +721,13 @@ const fotoUpload = multer({
     destination: uploadDir,
     filename: (_req, file, cb) => cb(null, crypto.randomUUID() + path.extname(file.originalname).toLowerCase()),
   }),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => cb(null, ["image/jpeg", "image/png"].includes(file.mimetype)),
 });
 // Foto de perfil privada, armazenada em uploads e acessível somente pelo próprio usuário.
 r.post("/perfil/foto", autenticar, (req, res, next) => fotoUpload.single("foto")(req, res, (err) => {
-  if (err) return res.status(400).json({ erro: "Envie uma imagem JPG ou PNG de até 5 MB." });
-  if (!req.file) return bad(res, "Envie uma imagem JPG ou PNG de até 5 MB.");
+  if (err) return res.status(400).json({ erro: "Envie uma imagem JPG ou PNG de até 20 MB." });
+  if (!req.file) return bad(res, "Envie uma imagem JPG ou PNG de até 20 MB.");
   const header = Buffer.alloc(8), fd = fs.openSync(req.file.path, "r");
   fs.readSync(fd, header, 0, 8, 0); fs.closeSync(fd);
   const valido = req.file.mimetype === "image/png"
@@ -752,9 +752,9 @@ r.get("/perfil/foto", autenticar, (req, res) => {
   res.sendFile(arquivo);
 });
 
-// Upload de imagem para produtos: apenas administradores, JPG/PNG até 5 MB.
+// Upload de imagem para produtos: apenas administradores, JPG/PNG até 20 MB.
 r.post("/produtos/imagem", autenticar, admin, (req, res) => fotoUpload.single("foto")(req, res, (err) => {
-  if (err) return res.status(400).json({ erro: "Envie uma imagem JPG ou PNG de até 5 MB." });
+  if (err) return res.status(400).json({ erro: "Envie uma imagem JPG ou PNG de até 20 MB." });
   if (!req.file) return bad(res, "Selecione uma imagem JPG ou PNG.");
   const header = Buffer.alloc(8), fd = fs.openSync(req.file.path, "r");
   fs.readSync(fd, header, 0, 8, 0); fs.closeSync(fd);
@@ -779,7 +779,7 @@ r.get("/produtos/imagens/:arquivo", (req, res) => {
 r.post("/documentos", autenticar, (req, res, next) =>
   upload.single("arquivo")(req, res, (err) => {
     if (err) return res.status(400).json({ erro: err.message });
-    if (!req.file) return bad(res, "Envie um PDF, JPG ou PNG de até 10 MB.");
+    if (!req.file) return bad(res, "Envie um PDF, JPG ou PNG de até 50 MB.");
     const signatures = {
       "application/pdf": (b) => b.subarray(0, 5).toString() === "%PDF-",
       "image/png": (b) =>
