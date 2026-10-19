@@ -215,7 +215,7 @@ r.get("/usuarios", autenticar, admin, (_req, res) =>
 // Fotos dos usuários: acessíveis somente por administradores autenticados.
 r.get("/usuarios/:id/foto", autenticar, admin, (req, res) => {
   const usuario = get("usuarios", positiveId(req.params.id));
-  if (!usuario?.foto_url || !/^[a-f0-9-]+\\.(jpg|jpeg|png)$/i.test(usuario.foto_url)) return res.sendStatus(404);
+  if (!usuario?.foto_url || !/^[a-f0-9-]+\.(jpg|jpeg|png)$/i.test(usuario.foto_url)) return res.sendStatus(404);
   const arquivo = path.join(uploadDir, path.basename(usuario.foto_url));
   if (!fs.existsSync(arquivo)) return res.sendStatus(404);
   res.type(path.extname(arquivo).toLowerCase() === ".png" ? "image/png" : "image/jpeg");
