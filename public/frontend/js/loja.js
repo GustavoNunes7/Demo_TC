@@ -1778,6 +1778,7 @@
       await api(id ? "/avisos/" + id : "/avisos", { method: id ? "PATCH" : "POST", body: JSON.stringify(body) });
       resetAvisoAdmin();
       await carregarAvisosAdmin();
+      document.dispatchEvent(new CustomEvent("tc-avisos-atualizados", { detail: { data: body.data_evento } }));
       setMsg($("gAvisoMsg"), id ? "Aviso atualizado e calendário sincronizado." : "Aviso publicado e calendário sincronizado.", "success");
     } catch (e) {
       setMsg($("gAvisoMsg"), e.message);
@@ -2139,7 +2140,7 @@
       });
       resetAvisoPaginaAdmin();
       await carregarAvisosPaginaAdmin();
-      document.dispatchEvent(new CustomEvent("tc-avisos-atualizados"));
+      document.dispatchEvent(new CustomEvent("tc-avisos-atualizados", { detail: { data: body.data_evento } }));
       setMsg($("avisosAdminMsg"), id ? "Aviso atualizado e calendário sincronizado." : "Aviso publicado no calendário.", "success");
     } catch (e) { setMsg($("avisosAdminMsg"), e.message); }
   }
