@@ -71,6 +71,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  const urlsDocumentosAbertos = new Set();
+  window.addEventListener("beforeunload", () => {
+    urlsDocumentosAbertos.forEach((url) => URL.revokeObjectURL(url));
+    urlsDocumentosAbertos.clear();
+  });
+
   async function abrirDocumento(id) {
     const janela = window.open("about:blank", "_blank");
     const t = token();
@@ -93,6 +99,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
+      // A URL precisa continuar válida enquanto a aba do documento estiver aberta.
+      urlsDocumentosAbertos.add(url);
 
       if (janela && !janela.closed) {
         janela.location.href = url;
@@ -106,7 +114,6 @@ document.addEventListener("DOMContentLoaded", function () {
         link.remove();
       }
 
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (e) {
       console.error("Visualização:", e);
       msg.textContent = e.message || "Não foi possível abrir o documento.";
@@ -1619,10 +1626,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ) || "inicio";
   document.addEventListener("DOMContentLoaded", () => {
     const main = document.querySelector(".layout-wrapper > .main-content");
-    if (!main) {
-      console.warn("TechCampus: .main-content não encontrado.");
-      return;
-    }
+    // Este script também é carregado por sistema.html, que não usa
+    // o layout da landing page. Nesse caso, esta rotina não se aplica.
+    if (!main) return;
     // Corrige a estrutura sem recriar os formulários nem perder IDs/eventos.
     for (const id of ["perfil", "configuracoes"]) {
       const section = document.getElementById(id);
@@ -1988,12 +1994,11 @@ const faqItems =
 
 faqItems.forEach(function (item) {
 
-    const button =
-        item.querySelector(".faq-question");
+    const button = item.querySelector(".faq-question");
+    const symbol = item.querySelector(".symbol");
 
-    const symbol =
-        item.querySelector(".symbol");
-
+    // Algumas telas reutilizam script.js sem conter o HTML do FAQ.
+    if (!button) return;
 
     button.addEventListener("click", function () {
 

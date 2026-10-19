@@ -1560,15 +1560,25 @@
     $("gBusca").addEventListener("input", renderProdutosAdmin);
     $("gNovo").onclick = () => abrirProduto(null);
     $("gProdSalvar").onclick = salvarProduto;
+    let gProdPreviewUrl = null;
     $("gProdFoto").addEventListener("change", () => {
       const file = $("gProdFoto").files?.[0];
-      if (!file) return;
+      if (gProdPreviewUrl) {
+        URL.revokeObjectURL(gProdPreviewUrl);
+        gProdPreviewUrl = null;
+      }
+      if (!file) {
+        $("gProdFotoPreview").src = "/landing/images/logoTechCampus.png";
+        return;
+      }
       if (!/^image\/(jpeg|png)$/.test(file.type) || file.size > 5 * 1024 * 1024) {
         setMsg($("gProdMsg"), "Escolha uma foto JPG ou PNG de até 5 MB.");
         $("gProdFoto").value = "";
+        $("gProdFotoPreview").src = "/landing/images/logoTechCampus.png";
         return;
       }
-      $("gProdFotoPreview").src = URL.createObjectURL(file);
+      gProdPreviewUrl = URL.createObjectURL(file);
+      $("gProdFotoPreview").src = gProdPreviewUrl;
       setMsg($("gProdMsg"), "");
     });
     $("gFiltroPed").onchange = carregarPedidosAdmin;
@@ -1761,6 +1771,11 @@
         await api("/produtos", { method: "POST", body: JSON.stringify(body) });
       modalProdAdmin.hide();
       $("gProdFoto").value = "";
+      if (gProdPreviewUrl) {
+        URL.revokeObjectURL(gProdPreviewUrl);
+        gProdPreviewUrl = null;
+      }
+      $("gProdFotoPreview").src = "/landing/images/logoTechCampus.png";
       await carregarProdutosAdmin();
       setMsg($("gMsg"), "Produto salvo com sucesso.", "success");
     } catch (e) {
