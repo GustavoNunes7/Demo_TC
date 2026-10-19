@@ -335,8 +335,19 @@ r.patch("/produtos/:id", autenticar, admin, (req, res) => {
   );
   res.json(get("produtos", p.id));
 });
+// Exclusão lógica: preserva o histórico de pedidos que referencia o produto.
+r.delete("/produtos/:id", autenticar, admin, (req, res) => {
+  const id = positiveId(req.params.id);
+  const produto = get("produtos", id);
+  if (!produto) return res.sendStatus(404);
+  db.prepare("UPDATE produtos SET ativo=0 WHERE id=?").run(id);
+  res.status(204).end();
+});
+
 // Pedidos: reserva atômica do estoque
 r.post("/pedidos", autenticar, (req, res) => {
+  if (req.usuario.papel === "admin")
+    return res.status(403).json({ erro: "Contas administrativas não podem realizar compras." });
   const itens = req.body.itens;
   if (!Array.isArray(itens) || !itens.length || itens.length > 30)
     return bad(res, "Informe de 1 a 30 itens.");

@@ -1463,11 +1463,39 @@ document.addEventListener("DOMContentLoaded", async () => {
   previousButton?.addEventListener("click",()=>{currentDate.setMonth(currentDate.getMonth()-1);renderCalendar();});
   nextButton?.addEventListener("click",()=>{currentDate.setMonth(currentDate.getMonth()+1);renderCalendar();});
   todayButton?.addEventListener("click",()=>{currentDate=new Date();renderCalendar();});
-  try{
-    const response=await fetch("/api/avisos");const data=await response.json().catch(()=>[]);if(!response.ok)throw new Error("Não foi possível carregar os avisos.");
-    avisos=(Array.isArray(data)?data:[]).filter(a=>Number(a.publicado??1)===1).map(a=>({id:Number(a.id),titulo:String(a.titulo||"Aviso"),categoria:categoriaValida.includes(a.categoria)?a.categoria:"importante",data:String(a.data_evento||""),horario:String(a.horario||""),local:String(a.local||""),descricao:String(a.conteudo||"")})).filter(a=>/^\d{4}-\d{2}-\d{2}$/.test(a.data));
-  }catch(error){console.error("Erro ao carregar avisos do calendário:",error);avisos=[];}
-  renderCalendar();renderAgenda();aplicarFiltro("todos");
+  async function carregarAvisosCalendario(dataAlvo = "") {
+    try {
+      const response = await fetch("/api/avisos", { cache: "no-store" });
+      const data = await response.json().catch(() => []);
+      if (!response.ok) throw new Error("Não foi possível carregar os avisos.");
+      avisos = (Array.isArray(data) ? data : [])
+        .filter(a => Number(a.publicado ?? 1) === 1)
+        .map(a => ({
+          id: Number(a.id),
+          titulo: String(a.titulo || "Aviso"),
+          categoria: categoriaValida.includes(a.categoria) ? a.categoria : "importante",
+          data: String(a.data_evento || "").slice(0, 10),
+          horario: String(a.horario || ""),
+          local: String(a.local || ""),
+          descricao: String(a.conteudo || "")
+        }))
+        .filter(a => /^\d{4}-\d{2}-\d{2}$/.test(a.data));
+      if (dataAlvo && /^\d{4}-\d{2}-\d{2}$/.test(dataAlvo)) {
+        const [ano, mes] = dataAlvo.split("-").map(Number);
+        currentDate = new Date(ano, mes - 1, 1);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar avisos do calendário:", error);
+      avisos = [];
+    }
+    renderCalendar();
+    renderAgenda();
+    aplicarFiltro("todos");
+  }
+  document.addEventListener("tc-avisos-atualizados", (event) => {
+    carregarAvisosCalendario(event.detail?.data || "");
+  });
+  await carregarAvisosCalendario();
 });
 
 /* VOLTAR DAS CONFIGURAÇÕES */

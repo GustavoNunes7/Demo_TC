@@ -1369,6 +1369,32 @@
     </div>
 
 
+    <!-- Ferramentas de edição disponíveis somente para administradores -->
+    <div id="avisosAdminFerramentas" class="d-none mb-4">
+      <button type="button" id="avisosAdminAbrir" class="btn btn-danger">
+        <i class="bi bi-pencil-square me-2"></i>Gerenciar avisos
+      </button>
+      <div id="avisosAdminEditor" class="card bg-dark text-white border-secondary mt-3 p-3" hidden>
+        <h4 class="h5 mb-3" id="avisosAdminTitulo">Publicar aviso</h4>
+        <form id="avisosAdminForm">
+          <input type="hidden" id="avisosAdminId">
+          <div class="mb-3"><label class="form-label" for="avisosAdminNome">Título</label><input id="avisosAdminNome" class="form-control bg-dark text-white border-secondary" maxlength="150" required></div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label" for="avisosAdminCategoria">Categoria</label><select id="avisosAdminCategoria" class="form-select bg-dark text-white border-secondary"><option value="evento">Evento</option><option value="academico">Acadêmico</option><option value="reuniao">Reunião</option><option value="importante">Importante</option></select></div>
+            <div class="col-md-4"><label class="form-label" for="avisosAdminData">Data</label><input type="date" id="avisosAdminData" class="form-control bg-dark text-white border-secondary" required></div>
+            <div class="col-md-4"><label class="form-label" for="avisosAdminHorario">Horário</label><input type="time" id="avisosAdminHorario" class="form-control bg-dark text-white border-secondary"></div>
+          </div>
+          <div class="mb-3"><label class="form-label" for="avisosAdminLocal">Local</label><input id="avisosAdminLocal" class="form-control bg-dark text-white border-secondary" maxlength="150"></div>
+          <div class="mb-3"><label class="form-label" for="avisosAdminDescricao">Descrição</label><textarea id="avisosAdminDescricao" class="form-control bg-dark text-white border-secondary" rows="3" maxlength="5000" required></textarea></div>
+          <div class="d-flex flex-wrap gap-2"><button type="submit" class="btn btn-danger" id="avisosAdminSalvar">Publicar aviso</button><button type="button" class="btn btn-outline-light" id="avisosAdminNovo">Novo aviso</button><button type="button" class="btn btn-outline-secondary" id="avisosAdminFechar">Fechar editor</button></div>
+          <div id="avisosAdminMsg" class="small mt-3" role="status"></div>
+        </form>
+        <hr class="border-secondary">
+        <h5 class="h6">Avisos publicados</h5>
+        <div id="avisosAdminLista"></div>
+      </div>
+    </div>
+
     <!-- =====================================================
          FILTROS
     ====================================================== -->
