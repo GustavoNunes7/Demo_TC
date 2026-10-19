@@ -1755,7 +1755,7 @@
       const arquivo = $("gProdFoto").files?.[0];
       if (arquivo) {
         if (!/^image\/(jpeg|png)$/.test(arquivo.type) || arquivo.size > 20 * 1024 * 1024)
-          throw new Error("Escolha uma foto JPG ou PNG de até 5 MB.");
+          throw new Error("Escolha uma foto JPG ou PNG de até 20 MB.");
         const dados = new FormData();
         dados.append("foto", arquivo);
         const upload = await api("/produtos/imagem", { method: "POST", body: dados });
