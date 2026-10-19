@@ -1619,10 +1619,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ) || "inicio";
   document.addEventListener("DOMContentLoaded", () => {
     const main = document.querySelector(".layout-wrapper > .main-content");
-    if (!main) {
-      console.warn("TechCampus: .main-content não encontrado.");
-      return;
-    }
+    // Este script também é carregado por sistema.html, que não usa
+    // o layout da landing page. Nesse caso, esta rotina não se aplica.
+    if (!main) return;
     // Corrige a estrutura sem recriar os formulários nem perder IDs/eventos.
     for (const id of ["perfil", "configuracoes"]) {
       const section = document.getElementById(id);
@@ -1988,12 +1987,11 @@ const faqItems =
 
 faqItems.forEach(function (item) {
 
-    const button =
-        item.querySelector(".faq-question");
+    const button = item.querySelector(".faq-question");
+    const symbol = item.querySelector(".symbol");
 
-    const symbol =
-        item.querySelector(".symbol");
-
+    // Algumas telas reutilizam script.js sem conter o HTML do FAQ.
+    if (!button) return;
 
     button.addEventListener("click", function () {
 
