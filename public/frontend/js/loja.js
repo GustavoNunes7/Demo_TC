@@ -1458,6 +1458,7 @@
         <ul class="nav nav-pills mb-3 gap-2">
           <li class="nav-item"><button type="button" class="nav-link active" id="tabGProd">Produtos</button></li>
           <li class="nav-item"><button type="button" class="nav-link" id="tabGPed">Pedidos</button></li>
+          <li class="nav-item"><button type="button" class="nav-link" id="tabGAvisos">Avisos</button></li>
         </ul>
         <div id="gProdutos">
           <div class="d-flex flex-wrap gap-2 mb-3">
@@ -1465,6 +1466,24 @@
             <button type="button" class="btn btn-danger ms-auto" id="gNovo"><i class="bi bi-plus-lg me-1"></i>Novo produto</button>
           </div>
           <div id="gProdTabela"></div>
+        </div>
+        <div id="gAvisos" hidden>
+          <form id="gFormAviso" class="border border-secondary rounded-3 p-3 mb-4">
+            <input type="hidden" id="gAvisoId">
+            <h5 id="gAvisoFormTitulo" class="mb-3">Publicar aviso</h5>
+            <div class="row g-3">
+              <div class="col-12"><label for="gAvisoTitulo" class="form-label">Título</label><input id="gAvisoTitulo" class="form-control bg-dark text-white border-secondary" maxlength="150" required></div>
+              <div class="col-md-4"><label for="gAvisoCategoria" class="form-label">Categoria</label><select id="gAvisoCategoria" class="form-select bg-dark text-white border-secondary" required><option value="evento">Evento</option><option value="academico">Acadêmico</option><option value="reuniao">Reunião</option><option value="importante">Importante</option></select></div>
+              <div class="col-md-4"><label for="gAvisoData" class="form-label">Data</label><input id="gAvisoData" type="date" class="form-control bg-dark text-white border-secondary" required></div>
+              <div class="col-md-4"><label for="gAvisoHorario" class="form-label">Horário</label><input id="gAvisoHorario" type="time" class="form-control bg-dark text-white border-secondary" value="08:00"></div>
+              <div class="col-12"><label for="gAvisoLocal" class="form-label">Local</label><input id="gAvisoLocal" class="form-control bg-dark text-white border-secondary" maxlength="150" placeholder="Ex.: Auditório SENAI"></div>
+              <div class="col-12"><label for="gAvisoConteudo" class="form-label">Descrição</label><textarea id="gAvisoConteudo" class="form-control bg-dark text-white border-secondary" rows="3" maxlength="5000" required></textarea></div>
+              <div class="col-12 d-flex flex-wrap gap-2"><button class="btn btn-danger" id="gAvisoSalvar" type="submit">Publicar aviso</button><button class="btn btn-outline-secondary" id="gAvisoCancelar" type="button" hidden>Cancelar edição</button></div>
+              <div class="col-12"><div id="gAvisoMsg" role="status" class="small"></div></div>
+            </div>
+          </form>
+          <div class="d-flex align-items-center justify-content-between gap-2 mb-3"><h5 class="mb-0">Avisos cadastrados</h5><button type="button" class="btn btn-outline-light btn-sm" id="gAvisoAtualizar">Atualizar</button></div>
+          <div id="gAvisoLista"></div>
         </div>
         <div id="gPedidos" hidden>
           <div class="d-flex flex-wrap gap-2 mb-3">
@@ -1519,6 +1538,10 @@
 
     $("tabGProd").onclick = () => aba("prod");
     $("tabGPed").onclick = () => aba("ped");
+    $("tabGAvisos").onclick = () => aba("avisos");
+    $("gFormAviso").addEventListener("submit", salvarAvisoAdmin);
+    $("gAvisoCancelar").onclick = resetAvisoAdmin;
+    $("gAvisoAtualizar").onclick = carregarAvisosAdmin;
     $("gBusca").addEventListener("input", renderProdutosAdmin);
     $("gNovo").onclick = () => abrirProduto(null);
     $("mpSalvar").onclick = salvarProduto;
@@ -1532,9 +1555,12 @@
   function aba(qual) {
     $("tabGProd").classList.toggle("active", qual === "prod");
     $("tabGPed").classList.toggle("active", qual === "ped");
+    $("tabGAvisos").classList.toggle("active", qual === "avisos");
     $("gProdutos").hidden = qual !== "prod";
     $("gPedidos").hidden = qual !== "ped";
+    $("gAvisos").hidden = qual !== "avisos";
     if (qual === "ped") carregarPedidosAdmin();
+    if (qual === "avisos") carregarAvisosAdmin();
   }
 
   async function carregarProdutosAdmin() {
@@ -1665,6 +1691,84 @@
       carregarProdutos();
     } catch (e) {
       setMsg($("mpMsg"), e.message);
+    }
+  }
+
+  const CATEGORIAS_AVISO = { evento: "Evento", academico: "Acadêmico", reuniao: "Reunião", importante: "Importante" };
+
+  async function carregarAvisosAdmin() {
+    const container = $("gAvisoLista");
+    if (!container) return;
+    container.replaceChildren(h("p", { class: "text-secondary" }, "Carregando avisos..."));
+    try {
+      const avisos = await api("/admin/avisos");
+      container.replaceChildren();
+      if (!avisos.length) {
+        container.append(h("p", { class: "text-secondary" }, "Nenhum aviso cadastrado."));
+        return;
+      }
+      avisos.forEach((aviso) => {
+        const item = h("article", { class: "d-flex flex-wrap justify-content-between align-items-start gap-3 p-3 mb-2 rounded-3 border border-secondary bg-dark" });
+        const info = h("div", { class: "flex-grow-1" },
+          h("strong", { class: "d-block mb-1" }, aviso.titulo + (Number(aviso.publicado) === 1 ? "" : " (excluído)")),
+          h("p", { class: "small text-white-50 mb-2" }, aviso.conteudo),
+          h("small", { class: "text-secondary" }, (CATEGORIAS_AVISO[aviso.categoria] || "Aviso") + " · " + (aviso.data_evento || "Sem data") + " · " + (aviso.horario || "Sem horário") + " · " + (aviso.local || "Sem local"))
+        );
+        const actions = h("div", { class: "d-flex flex-wrap gap-2" });
+        const edit = h("button", { type: "button", class: "btn btn-sm btn-outline-light", onclick: () => editarAvisoAdmin(aviso) }, "Editar");
+        const del = h("button", { type: "button", class: "btn btn-sm btn-outline-danger", onclick: async () => {
+          if (!confirm("Excluir o aviso “" + aviso.titulo + "”? Ele deixará de aparecer no calendário.")) return;
+          try { await api("/avisos/" + aviso.id, { method: "DELETE" }); await carregarAvisosAdmin(); setMsg($("gAvisoMsg"), "Aviso excluído.", "success"); }
+          catch (e) { setMsg($("gAvisoMsg"), e.message); }
+        } }, "Excluir");
+        actions.append(edit, del); item.append(info, actions); container.append(item);
+      });
+    } catch (e) {
+      container.replaceChildren(h("p", { class: "text-danger" }, e.message));
+    }
+  }
+
+  function editarAvisoAdmin(aviso) {
+    $("gAvisoId").value = aviso.id;
+    $("gAvisoTitulo").value = aviso.titulo || "";
+    $("gAvisoCategoria").value = aviso.categoria || "importante";
+    $("gAvisoData").value = aviso.data_evento || "";
+    $("gAvisoHorario").value = aviso.horario || "";
+    $("gAvisoLocal").value = aviso.local || "";
+    $("gAvisoConteudo").value = aviso.conteudo || "";
+    $("gAvisoFormTitulo").textContent = "Editar aviso #" + aviso.id;
+    $("gAvisoSalvar").textContent = "Salvar alterações";
+    $("gAvisoCancelar").hidden = false;
+    $("gFormAviso").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function resetAvisoAdmin() {
+    $("gFormAviso").reset();
+    $("gAvisoId").value = "";
+    $("gAvisoHorario").value = "08:00";
+    $("gAvisoFormTitulo").textContent = "Publicar aviso";
+    $("gAvisoSalvar").textContent = "Publicar aviso";
+    $("gAvisoCancelar").hidden = true;
+  }
+
+  async function salvarAvisoAdmin(event) {
+    event.preventDefault();
+    const id = $("gAvisoId").value;
+    const body = {
+      titulo: $("gAvisoTitulo").value.trim(),
+      categoria: $("gAvisoCategoria").value,
+      data_evento: $("gAvisoData").value,
+      horario: $("gAvisoHorario").value,
+      local: $("gAvisoLocal").value.trim(),
+      conteudo: $("gAvisoConteudo").value.trim(),
+    };
+    try {
+      await api(id ? "/avisos/" + id : "/avisos", { method: id ? "PATCH" : "POST", body: JSON.stringify(body) });
+      resetAvisoAdmin();
+      await carregarAvisosAdmin();
+      setMsg($("gAvisoMsg"), id ? "Aviso atualizado e calendário sincronizado." : "Aviso publicado e calendário sincronizado.", "success");
+    } catch (e) {
+      setMsg($("gAvisoMsg"), e.message);
     }
   }
 
