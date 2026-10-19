@@ -30,6 +30,21 @@
       const blob = await response.blob();
       if (img.dataset.objectUrl) URL.revokeObjectURL(img.dataset.objectUrl);
       const url = URL.createObjectURL(blob); img.dataset.objectUrl = url; img.src = url;
+      const avatar = document.querySelector("#userDropdown .user-avatar");
+      if (avatar) {
+        let avatarImg = avatar.querySelector("img");
+        if (!avatarImg) {
+          avatar.replaceChildren();
+          avatarImg = document.createElement("img");
+          avatarImg.alt = "Foto de perfil";
+          avatarImg.className = "rounded-circle";
+          avatarImg.style.width = "38px";
+          avatarImg.style.height = "38px";
+          avatarImg.style.objectFit = "cover";
+          avatar.append(avatarImg);
+        }
+        avatarImg.src = url;
+      }
     } catch { /* Perfil sem foto ou API temporariamente indisponível. */ }
   }
   function ligarGerenciamentoUsuarios() {
