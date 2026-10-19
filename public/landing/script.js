@@ -1106,7 +1106,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ".products-filters .btn-filter",
   );
 
-  const products = Array.from(track.querySelectorAll(".product-slide"));
+  let products = Array.from(track.querySelectorAll(".product-slide"));
 
   /*
    * Índice atual do carrossel.
@@ -1364,6 +1364,14 @@ document.addEventListener("DOMContentLoaded", () => {
       updateCarouselPosition();
       updateCarouselControls();
     }
+  });
+
+  // Recebe produtos inseridos dinamicamente pela loja/API.
+  document.addEventListener("tc-produtos-atualizados", () => {
+    products = Array.from(track.querySelectorAll(".product-slide"));
+    currentIndex = 0;
+    updateButtons();
+    filterProducts();
   });
 
   /*
