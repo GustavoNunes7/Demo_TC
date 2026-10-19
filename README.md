@@ -17,7 +17,7 @@ Na pasta principal do projeto, crie um arquivo chamado `.env`. Caso exista um `.
 Configure as seguintes variáveis:
 
 ```env
-PORT=3001
+PORT=3002
 JWT_SECRET=coloque_aqui_um_segredo_aleatorio_com_mais_de_32_caracteres
 PAGAMENTO_SIMULADO=true
 
@@ -87,7 +87,7 @@ Se aparecer o erro `EADDRINUSE`, significa que a porta configurada já está sen
 
 Com o servidor em execução, abra o navegador e acesse:
 
-**http://localhost:3001/frontend/login.html**
+**http://localhost:3002/frontend/login.html**
 
 ### Perfil de aluno
 
@@ -109,7 +109,7 @@ Após entrar, o sistema deverá identificar o perfil da conta e disponibilizar a
 
 | Problema | O que fazer |
 |---|---|
-| `EADDRINUSE` | Verifique se outro servidor já está usando a porta 3001. |
+| `EADDRINUSE` | Verifique se outro servidor já está usando a porta 3002. |
 | `Invalid credentials` ou erro de login | Confira o e-mail e a senha e execute `npm run seed` para preparar a conta de teste. |
 | Administrador não consegue entrar | Confira as variáveis `ADMIN_EMAIL` e `ADMIN_PASSWORD` e execute `npm run admin:create`. |
 | Página não encontrada | Confirme se o servidor está ativo e se o endereço corresponde à estrutura do projeto. |
