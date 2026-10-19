@@ -1827,7 +1827,7 @@
     $("gAvisoCancelar").hidden = true;
   }
 
-  async async function salvarAvisoAdmin(event) {
+  async function salvarAvisoAdmin(event) {
     event.preventDefault();
     const id = $("gAvisoId").value;
     const body = {
@@ -2186,7 +2186,7 @@
     setMsg($("avisosAdminMsg"), "");
   }
 
-  async async function salvarAvisoPaginaAdmin(event) {
+  async function salvarAvisoPaginaAdmin(event) {
     event.preventDefault();
     const id = $("avisosAdminId").value;
     const body = {
