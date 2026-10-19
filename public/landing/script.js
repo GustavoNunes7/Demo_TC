@@ -528,6 +528,11 @@ document.addEventListener("DOMContentLoaded", function () {
   ];
 
   function mostrarTela(id) {
+    // Administradores gerenciam pedidos e tokens pelo painel Gerência.
+    if (window.tcPapelUsuario === "admin" && ["pedidos", "meus-tokens"].includes(id)) {
+      id = "gerente";
+      if (window.location.hash !== "#gerente") window.location.hash = "gerente";
+    }
     // Verifica se a tela existe
     const tela = document.getElementById(id);
 
@@ -574,11 +579,13 @@ document.addEventListener("DOMContentLoaded", function () {
   function navegarPeloHash() {
     let id = window.location.hash.replace("#", "");
 
-    // Corrige caso não exista hash
-    if (!id || !telas.includes(id)) {
-      id = "inicio";
+    if (window.tcPapelUsuario === "admin" && ["pedidos", "meus-tokens"].includes(id)) {
+      id = "gerente";
+      if (window.location.hash !== "#gerente") window.location.hash = "gerente";
     }
 
+    // A tela Gerência é criada dinamicamente pelo JavaScript da loja.
+    if (!id || (!telas.includes(id) && id !== "gerente")) id = "inicio";
     mostrarTela(id);
   }
 
