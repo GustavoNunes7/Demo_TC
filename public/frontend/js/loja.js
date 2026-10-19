@@ -79,13 +79,16 @@
   if (!token) return; // auth.js cuida do redirecionamento
 
   async function api(path, opts = {}) {
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      ...(opts.headers || {}),
+    };
+    if (opts.body !== undefined && !(opts.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
     const res = await fetch("/api" + path, {
       ...opts,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        ...(opts.headers || {}),
-      },
+      headers,
     });
     let data = null;
     try {
@@ -1458,6 +1461,7 @@
         <ul class="nav nav-pills mb-3 gap-2">
           <li class="nav-item"><button type="button" class="nav-link active" id="tabGProd">Produtos</button></li>
           <li class="nav-item"><button type="button" class="nav-link" id="tabGPed">Pedidos</button></li>
+          <li class="nav-item"><button type="button" class="nav-link" id="tabGTok">Tokens IoT</button></li>
           <li class="nav-item"><button type="button" class="nav-link" id="tabGAvisos">Avisos</button></li>
         </ul>
         <div id="gProdutos">
@@ -1466,6 +1470,13 @@
             <button type="button" class="btn btn-danger ms-auto" id="gNovo"><i class="bi bi-plus-lg me-1"></i>Novo produto</button>
           </div>
           <div id="gProdTabela"></div>
+        </div>
+        <div id="gTokens" hidden>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <p class="text-secondary small mb-0 me-auto">Consulte os tokens de retirada e o estado de cada pedido.</p>
+            <button type="button" class="btn btn-outline-light" id="gAtualizarTokens"><i class="bi bi-arrow-clockwise me-1"></i>Atualizar tokens</button>
+          </div>
+          <div id="gTokensTabela"></div>
         </div>
         <div id="gAvisos" hidden>
           <form id="gFormAviso" class="border border-secondary rounded-3 p-3 mb-4">
@@ -1514,8 +1525,10 @@
           <select id="mpCat" class="form-select bg-dark text-white border-secondary mb-2">${CATEGORIAS.map((c) => `<option value="${c}">${c}</option>`).join("")}</select>
           <label class="form-label small" for="mpDesc">Descrição</label>
           <textarea id="mpDesc" rows="2" class="form-control bg-dark text-white border-secondary mb-2"></textarea>
-          <label class="form-label small" for="mpImg">Imagem (caminho)</label>
-          <input id="mpImg" class="form-control bg-dark text-white border-secondary mb-2" placeholder="/landing/images/produto.png">
+          <label class="form-label small" for="mpFoto">Foto do produto</label>
+          <input id="mpFoto" type="file" accept="image/png,image/jpeg" class="form-control bg-dark text-white border-secondary mb-2">
+          <input id="mpImg" type="hidden">
+          <div class="mb-3"><img id="mpFotoPreview" alt="Prévia da foto do produto" src="/landing/images/logoTechCampus.png" style="width:100%;max-width:180px;height:130px;object-fit:contain;background:#fff;border-radius:8px;padding:6px"></div>
           <div class="row g-2">
             <div class="col"><label class="form-label small" for="mpPreco">Preço (R$)</label>
               <input id="mpPreco" type="number" min="0" step="0.01" class="form-control bg-dark text-white border-secondary"></div>
@@ -1538,13 +1551,26 @@
 
     $("tabGProd").onclick = () => aba("prod");
     $("tabGPed").onclick = () => aba("ped");
+    $("tabGTok").onclick = () => aba("tokens");
     $("tabGAvisos").onclick = () => aba("avisos");
+    $("gAtualizarTokens").onclick = carregarTokensAdmin;
     $("gFormAviso").addEventListener("submit", salvarAvisoAdmin);
     $("gAvisoCancelar").onclick = resetAvisoAdmin;
     $("gAvisoAtualizar").onclick = carregarAvisosAdmin;
     $("gBusca").addEventListener("input", renderProdutosAdmin);
     $("gNovo").onclick = () => abrirProduto(null);
     $("mpSalvar").onclick = salvarProduto;
+    $("mpFoto").addEventListener("change", () => {
+      const file = $("mpFoto").files?.[0];
+      if (!file) return;
+      if (!/^image\/(jpeg|png)$/.test(file.type) || file.size > 5 * 1024 * 1024) {
+        setMsg($("mpMsg"), "Escolha uma foto JPG ou PNG de até 5 MB.");
+        $("mpFoto").value = "";
+        return;
+      }
+      $("mpFotoPreview").src = URL.createObjectURL(file);
+      setMsg($("mpMsg"), "");
+    });
     $("gFiltroPed").onchange = carregarPedidosAdmin;
     $("gAtualizar").onclick = () => {
       carregarProdutosAdmin();
@@ -1555,12 +1581,40 @@
   function aba(qual) {
     $("tabGProd").classList.toggle("active", qual === "prod");
     $("tabGPed").classList.toggle("active", qual === "ped");
+    $("tabGTok").classList.toggle("active", qual === "tokens");
     $("tabGAvisos").classList.toggle("active", qual === "avisos");
     $("gProdutos").hidden = qual !== "prod";
     $("gPedidos").hidden = qual !== "ped";
+    $("gTokens").hidden = qual !== "tokens";
     $("gAvisos").hidden = qual !== "avisos";
     if (qual === "ped") carregarPedidosAdmin();
+    if (qual === "tokens") carregarTokensAdmin();
     if (qual === "avisos") carregarAvisosAdmin();
+  }
+
+  async function carregarTokensAdmin() {
+    const container = $("gTokensTabela");
+    if (!container) return;
+    container.replaceChildren(h("p", { class: "text-secondary" }, "Carregando tokens..."));
+    try {
+      const tokens = await api("/admin/tokens");
+      if (!tokens.length) {
+        container.replaceChildren(h("p", { class: "text-secondary" }, "Ainda não há tokens de retirada."));
+        return;
+      }
+      const corpo = h("tbody", {}, tokens.map((t) => h("tr", {},
+        h("td", {}, "#" + t.pedido_id),
+        h("td", {}, t.cliente || "—", h("div", { class: "small text-secondary" }, t.cliente_email || "")),
+        h("td", {}, h("code", { class: "fs-6" }, t.token)),
+        h("td", {}, STATUS[t.pedido_status] || t.pedido_status || "—"),
+        h("td", {}, PAG[t.pagamento_status] || t.pagamento_status || "Sem pagamento"),
+        h("td", {}, t.usado ? "Utilizado" : (t.expira_em && t.expira_em < Date.now() ? "Expirado" : "Ativo")),
+        h("td", {}, t.expira_em ? new Date(t.expira_em).toLocaleString("pt-BR") : "—")
+      )));
+      container.replaceChildren(tabela(["Pedido", "Aluno", "Token", "Status pedido", "Pagamento", "Estado token", "Expiração"], corpo));
+    } catch (e) {
+      container.replaceChildren(h("div", { class: "alert alert-danger" }, e.message));
+    }
   }
 
   async function carregarProdutosAdmin() {
@@ -1651,6 +1705,8 @@
     $("mpCat").value = p?.categoria || CATEGORIAS[0];
     $("mpDesc").value = p?.descricao || "";
     $("mpImg").value = p?.imagem || "";
+    $("mpFoto").value = "";
+    $("mpFotoPreview").src = p?.imagem || "/landing/images/logoTechCampus.png";
     $("mpPreco").value = p ? (p.preco_centavos / 100).toFixed(2) : "";
     $("mpEstoque").value = p ? p.estoque : 0;
     $("mpAtivo").checked = p ? !!p.ativo : true;
@@ -1675,6 +1731,8 @@
     )
       return setMsg($("mpMsg"), "Informe nome, preço e estoque válidos.");
 
+    const btn = $("mpSalvar");
+    btn.disabled = true;
     const body = {
       nome,
       categoria: $("mpCat").value,
@@ -1685,24 +1743,32 @@
     };
 
     try {
+      const arquivo = $("mpFoto").files?.[0];
+      if (arquivo) {
+        if (!/^image\/(jpeg|png)$/.test(arquivo.type) || arquivo.size > 5 * 1024 * 1024)
+          throw new Error("Escolha uma foto JPG ou PNG de até 5 MB.");
+        const dados = new FormData();
+        dados.append("foto", arquivo);
+        const upload = await api("/produtos/imagem", { method: "POST", body: dados });
+        body.imagem = upload.imagem;
+      }
+      if (!body.imagem) throw new Error("Selecione uma foto para o produto.");
       if (editandoId)
         await api(`/produtos/${editandoId}`, {
           method: "PATCH",
-          body: JSON.stringify({
-            ...body,
-            ativo: $("mpAtivo").checked ? 1 : 0,
-          }),
+          body: JSON.stringify({ ...body, ativo: $("mpAtivo").checked ? 1 : 0 }),
         });
       else
-        await api("/produtos", {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
+        await api("/produtos", { method: "POST", body: JSON.stringify(body) });
       modalProdAdmin.hide();
+      $("mpFoto").value = "";
       await carregarProdutosAdmin();
-      carregarProdutos();
+      await carregarProdutos();
+      setMsg($("gMsg"), "Produto salvo com sucesso.", "success");
     } catch (e) {
       setMsg($("mpMsg"), e.message);
+    } finally {
+      btn.disabled = false;
     }
   }
 
@@ -2156,6 +2222,9 @@
       return;
     }
 
+    // Disponibiliza o papel para a navegação central bloquear telas de aluno no Admin.
+    window.tcPapelUsuario = user.papel;
+
     // Atualizar nome do usuário
     const nome = document.querySelector("#userDropdown .fw-semibold");
     const sub = document.querySelector("#userDropdown small");
@@ -2182,6 +2251,11 @@
     if (user.papel === "admin") {
       ativarModoGerente();
       configurarEditorAvisosPagina();
+      document.querySelector('a.menu-item[href="#pedidos"]')?.remove();
+      document.querySelector('a.menu-item[href="#meus-tokens"]')?.remove();
+      $("pedidos")?.classList.add("d-none");
+      $("meus-tokens")?.classList.add("d-none");
+      if (["#pedidos", "#meus-tokens"].includes(location.hash)) location.hash = "#gerente";
     } else {
       document.querySelector('a.menu-item[href="#usuarios"]')?.remove();
       document.getElementById("avisosAdminFerramentas")?.remove();
