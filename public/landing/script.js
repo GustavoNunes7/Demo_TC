@@ -1465,7 +1465,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   todayButton?.addEventListener("click",()=>{currentDate=new Date();renderCalendar();});
   try{
     const response=await fetch("/api/avisos");const data=await response.json().catch(()=>[]);if(!response.ok)throw new Error("Não foi possível carregar os avisos.");
-    avisos=(Array.isArray(data)?data:[]).filter(a=>Number(a.publicado??1)===1).map(a=>({id:Number(a.id),titulo:String(a.titulo||"Aviso"),categoria:categoriaValida.includes(a.categoria)?a.categoria:"importante",data:String(a.data_evento||""),horario:String(a.horario||""),local:String(a.local||""),descricao:String(a.conteudo||"")})).filter(a=>/^\d{4}-\\d{2}-\\d{2}$/.test(a.data));
+    avisos=(Array.isArray(data)?data:[]).filter(a=>Number(a.publicado??1)===1).map(a=>({id:Number(a.id),titulo:String(a.titulo||"Aviso"),categoria:categoriaValida.includes(a.categoria)?a.categoria:"importante",data:String(a.data_evento||""),horario:String(a.horario||""),local:String(a.local||""),descricao:String(a.conteudo||"")})).filter(a=>/^\d{4}-\d{2}-\d{2}$/.test(a.data));
   }catch(error){console.error("Erro ao carregar avisos do calendário:",error);avisos=[];}
   renderCalendar();renderAgenda();aplicarFiltro("todos");
 });
