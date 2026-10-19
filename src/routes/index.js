@@ -885,7 +885,28 @@ r.post("/avisos", autenticar, admin, (req, res) => {
   const local = clean(req.body.local, 150);
   if (!titulo || !conteudo || !/^\d{4}-\d{2}-\d{2}$/.test(dataEvento) || !Number.isFinite(Date.parse(dataEvento + "T12:00:00")) || !allowed(categoria, ["evento", "academico", "reuniao", "importante"]) || (horario && !/^\d{2}:\d{2}$/.test(horario))) return bad(res, "Preencha título, descrição, categoria e uma data válida.");
   const info = db.prepare("INSERT INTO avisos(titulo,conteudo,categoria,data_evento,horario,local,publicado) VALUES(?,?,?,?,?,?,1)").run(titulo, conteudo, categoria, dataEvento, horario, local);
-  res.status(201).json(get("avisos", info.lastInsertRowid));
+  const avisoCriado = get("avisos", info.lastInsertRowid);
+
+  // Notifica cada aluno ativo uma única vez quando o aviso é publicado.
+  // A edição do aviso não dispara novamente a notificação de criação.
+  const alunos = db.prepare("SELECT id FROM usuarios WHERE papel='aluno' AND ativo=1").all();
+  const inserirNotificacaoEvento = db.prepare(
+    "INSERT INTO notificacoes(usuario_id,titulo,mensagem) VALUES(?,?,?)"
+  );
+  const dataLegivel = dataEvento.split("-").reverse().join("/");
+  const detalhesEvento = [dataLegivel, horario || null, local || null].filter(Boolean).join(" • ");
+  const mensagemEvento = [conteudo, detalhesEvento].filter(Boolean).join("\\n\\n");
+  const notificarAlunos = db.transaction(() => {
+    for (const aluno of alunos) {
+      inserirNotificacaoEvento.run(
+        aluno.id,
+        "Novo evento: " + titulo,
+        mensagemEvento
+      );
+    }
+  });
+  notificarAlunos();
+  res.status(201).json(avisoCriado);
 });
 r.patch("/avisos/:id", autenticar, admin, (req, res) => {
   const aviso = get("avisos", positiveId(req.params.id));

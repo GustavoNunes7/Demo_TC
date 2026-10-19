@@ -21,6 +21,98 @@
     el.className = `alert mt-3 ${erro ? "alert-danger" : "alert-success"}`;
     el.textContent = mensagem;
   };
+  async function editarFotoAntesDeEnviar(arquivo, input) {
+    const url = URL.createObjectURL(arquivo);
+    const modal = document.createElement("div");
+    modal.className = "tc-photo-editor-backdrop";
+    modal.innerHTML = `
+      <section class="tc-photo-editor" role="dialog" aria-modal="true" aria-labelledby="tcPhotoEditorTitle">
+        <header><h2 id="tcPhotoEditorTitle">Editar foto de perfil</h2><button type="button" class="tc-photo-close" aria-label="Fechar">×</button></header>
+        <p class="tc-photo-hint">Ajuste o enquadramento. A foto será salva em formato quadrado.</p>
+        <div class="tc-photo-stage"><canvas width="320" height="320" aria-label="Pré-visualização da foto cortada"></canvas></div>
+        <label>Zoom <input class="tc-photo-zoom" type="range" min="1" max="3" step="0.05" value="1"></label>
+        <label>Posição horizontal <input class="tc-photo-x" type="range" min="-1" max="1" step="0.01" value="0"></label>
+        <label>Posição vertical <input class="tc-photo-y" type="range" min="-1" max="1" step="0.01" value="0"></label>
+        <div class="tc-photo-actions">
+          <button type="button" class="tc-photo-rotate">Girar 90°</button>
+          <button type="button" class="tc-photo-flip">Espelhar</button>
+          <button type="button" class="tc-photo-reset">Reverter ajustes</button>
+        </div>
+        <footer><button type="button" class="tc-photo-cancel">Cancelar</button><button type="button" class="tc-photo-save">Usar esta foto</button></footer>
+        <p class="tc-photo-status" role="status"></p>
+      </section>`;
+    if (!document.getElementById("tc-photo-editor-styles")) {
+      const style = document.createElement("style");
+      style.id = "tc-photo-editor-styles";
+      style.textContent = `
+        .tc-photo-editor-backdrop{position:fixed;inset:0;z-index:20000;background:#000b;display:flex;align-items:center;justify-content:center;padding:16px}
+        .tc-photo-editor{width:min(480px,100%);max-height:92vh;overflow:auto;background:#171b22;color:#f5f7fa;border:1px solid #454b55;border-radius:16px;padding:20px;box-shadow:0 20px 70px #0009}
+        .tc-photo-editor header,.tc-photo-editor footer,.tc-photo-actions{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+        .tc-photo-editor header h2{font-size:1.2rem;margin:0}.tc-photo-editor button{border:1px solid #555e6b;background:#242a33;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer}
+        .tc-photo-editor button:focus-visible,.tc-photo-editor input:focus-visible{outline:2px solid #e53945;outline-offset:2px}
+        .tc-photo-editor .tc-photo-save{background:#bd2f39;border-color:#bd2f39}.tc-photo-editor .tc-photo-hint,.tc-photo-editor .tc-photo-status{font-size:.88rem;color:#aeb8c6}
+        .tc-photo-stage{width:min(320px,100%);aspect-ratio:1;margin:12px auto;background:#090b0e;border-radius:12px;overflow:hidden}.tc-photo-stage canvas{display:block;width:100%;height:100%}
+        .tc-photo-editor label{display:block;font-size:.9rem;margin:12px 0}.tc-photo-editor input[type=range]{display:block;width:100%;accent-color:#d33843}
+        .tc-photo-editor footer{justify-content:flex-end;margin-top:16px}
+      `;
+      document.head.append(style);
+    }
+    document.body.append(modal);
+    const image = new Image();
+    const canvas = modal.querySelector("canvas");
+    const ctx = canvas.getContext("2d");
+    const zoom = modal.querySelector(".tc-photo-zoom");
+    const posX = modal.querySelector(".tc-photo-x");
+    const posY = modal.querySelector(".tc-photo-y");
+    const status = modal.querySelector(".tc-photo-status");
+    let rotation = 0, flipped = false, closed = false;
+    const close = () => { if (closed) return; closed = true; URL.revokeObjectURL(url); modal.remove(); };
+    const render = () => {
+      if (!image.complete || !image.naturalWidth) return;
+      const size = 320, angle = ((rotation % 360) + 360) % 360;
+      const swap = angle === 90 || angle === 270;
+      const rw = swap ? image.naturalHeight : image.naturalWidth;
+      const rh = swap ? image.naturalWidth : image.naturalHeight;
+      const scale = Math.max(size / rw, size / rh) * Number(zoom.value);
+      const w = image.naturalWidth * scale, h = image.naturalHeight * scale;
+      ctx.clearRect(0, 0, size, size);
+      ctx.save(); ctx.translate(size / 2, size / 2); ctx.rotate(angle * Math.PI / 180);
+      ctx.scale(flipped ? -1 : 1, 1);
+      ctx.drawImage(image, -w / 2 + Number(posX.value) * Math.max(0, w-size)/2, -h / 2 + Number(posY.value) * Math.max(0, h-size)/2, w, h);
+      ctx.restore();
+    };
+    image.onload = render;
+    image.onerror = () => { status.textContent = "Não foi possível abrir esta imagem."; };
+    image.src = url;
+    [zoom, posX, posY].forEach(el => el.addEventListener("input", render));
+    modal.querySelector(".tc-photo-rotate").addEventListener("click", () => { rotation = (rotation + 90) % 360; render(); });
+    modal.querySelector(".tc-photo-flip").addEventListener("click", () => { flipped = !flipped; render(); });
+    modal.querySelector(".tc-photo-reset").addEventListener("click", () => { zoom.value = "1"; posX.value = "0"; posY.value = "0"; rotation = 0; flipped = false; render(); });
+    modal.querySelector(".tc-photo-close").addEventListener("click", close);
+    modal.querySelector(".tc-photo-cancel").addEventListener("click", close);
+    modal.addEventListener("click", event => { if (event.target === modal) close(); });
+    modal.querySelector(".tc-photo-save").addEventListener("click", async event => {
+      const button = event.currentTarget;
+      button.disabled = true; status.textContent = "Preparando foto...";
+      try {
+        const output = document.createElement("canvas"); output.width = 512; output.height = 512;
+        output.getContext("2d").drawImage(canvas, 0, 0, 512, 512);
+        const blob = await new Promise(resolve => output.toBlob(resolve, "image/jpeg", 0.9));
+        if (!blob) throw new Error("Não foi possível preparar a foto.");
+        const dados = new FormData(); dados.append("foto", blob, "foto-perfil.jpg");
+        await api("/perfil/foto", { method: "POST", body: dados });
+        await carregarFoto();
+        avisar("Foto de perfil atualizada.");
+        close();
+      } catch (error) {
+        status.textContent = error.message || "Não foi possível salvar a foto.";
+        button.disabled = false;
+      }
+    });
+    modal.querySelector(".tc-photo-close").focus();
+    return close;
+  }
+
   async function carregarFoto() {
     const img = document.getElementById("profilePreview");
     if (!img || !token()) return;
@@ -198,9 +290,8 @@
         if (!/^image\/(jpeg|png)$/.test(arquivo.type) || arquivo.size > 5 * 1024 * 1024) {
           avisar("Escolha uma imagem JPG ou PNG de até 5 MB.", true); foto.value = ""; return;
         }
-        const dados = new FormData(); dados.append("foto", arquivo);
-        try { await api("/perfil/foto", { method: "POST", body: dados }); await carregarFoto(); avisar("Foto de perfil atualizada."); }
-        catch (e) { avisar(e.message, true); }
+        await editarFotoAntesDeEnviar(arquivo, foto);
+        foto.value = "";
       });
     }
 
