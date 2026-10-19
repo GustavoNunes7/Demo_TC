@@ -114,9 +114,23 @@ Após entrar, o sistema deverá identificar o perfil da conta e disponibilizar a
 | Administrador não consegue entrar | Confira as variáveis `ADMIN_EMAIL` e `ADMIN_PASSWORD` e execute `npm run admin:create`. |
 | Página não encontrada | Confirme se o servidor está ativo e se o endereço corresponde à estrutura do projeto. |
 
-## 8. Observações
+## 8. Testar compra, notificações e token IoT
+
+Depois de configurar o `.env`, execute `npm run seed` para sincronizar os produtos da vitrine com os preços e estoques de demonstração. Esse comando atualiza os registros de produtos existentes e pode redefinir os estoques para os valores de teste.
+
+1. Inicie o servidor com `npm run dev`.
+2. Entre como aluno usando a conta de teste.
+3. Abra **Pedidos disponíveis**, escolha um produto com estoque e adicione-o ao carrinho.
+4. Finalize a compra e confirme o pagamento simulado. O token numérico de seis dígitos é criado pelo servidor e fica válido por 15 minutos.
+5. Consulte **Meus tokens** para visualizar os tokens dos pedidos pagos.
+6. Para testar a retirada, abra [http://localhost:3002/Iot/retirada.html](http://localhost:3002/Iot/retirada.html), informe o token e confirme a retirada somente depois de entregar os itens.
+7. Use o sino no cabeçalho para consultar notificações da conta. O administrador também recebe notificações de novos pagamentos, documentos e dúvidas.
+
+O token é validado no backend, vinculado ao pedido e não pode ser reutilizado depois que a retirada for confirmada. O pagamento é simulado e não movimenta dinheiro real.
+
+## 9. Correções e observações
 
 - Os comandos devem ser executados na pasta principal do projeto, onde está o `package.json`.
-- O comando `npm run seed` prepara dados de demonstração; confira o comportamento do script antes de executá-lo novamente em um banco com dados importantes.
+- O comando `npm run seed` sincroniza o catálogo e redefine os estoques dos produtos de demonstração. Faça backup do banco antes de executá-lo em uma base com dados que deseja preservar.
 - O pagamento simulado é apenas para testes.
 - Não utilize as credenciais de demonstração em produção.

@@ -69,6 +69,28 @@ CREATE TABLE IF NOT EXISTS formatura (
  data_evento TEXT, publicado INTEGER NOT NULL DEFAULT 1, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 `);
+// Migração compatível: a interface da loja oferece PIX, cartão e dinheiro.
+const pagamentosSql = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='pagamentos'").get()?.sql || "";
+if (!pagamentosSql.includes("'dinheiro'")) {
+  db.exec(`
+    BEGIN;
+    CREATE TABLE pagamentos_novo (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      pedido_id INTEGER NOT NULL UNIQUE REFERENCES pedidos(id) ON DELETE CASCADE,
+      metodo TEXT NOT NULL CHECK(metodo IN ('pix','cartao','dinheiro')),
+      valor_centavos INTEGER NOT NULL CHECK(valor_centavos >= 0),
+      status TEXT NOT NULL DEFAULT 'pendente' CHECK(status IN ('pendente','confirmado','cancelado')),
+      codigo TEXT,
+      criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    INSERT INTO pagamentos_novo (id,pedido_id,metodo,valor_centavos,status,codigo,criado_em)
+      SELECT id,pedido_id,metodo,valor_centavos,status,codigo,criado_em FROM pagamentos;
+    DROP TABLE pagamentos;
+    ALTER TABLE pagamentos_novo RENAME TO pagamentos;
+    COMMIT;
+  `);
+}
+
 // Migrações compatíveis com bancos existentes da versão original.
 const colunasUsuarios = db.prepare("PRAGMA table_info(usuarios)").all().map((c) => c.name);
 if (!colunasUsuarios.includes("ativo")) db.exec("ALTER TABLE usuarios ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1");
