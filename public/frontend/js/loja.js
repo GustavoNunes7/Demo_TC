@@ -2255,6 +2255,7 @@
       document.querySelector('a.menu-item[href="#meus-tokens"]')?.remove();
       $("pedidos")?.classList.add("d-none");
       $("meus-tokens")?.classList.add("d-none");
+      if (["#pedidos", "#meus-tokens"].includes(location.hash)) location.hash = "#gerente";
     } else {
       document.querySelector('a.menu-item[href="#usuarios"]')?.remove();
       document.getElementById("avisosAdminFerramentas")?.remove();
