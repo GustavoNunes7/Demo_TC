@@ -3918,3 +3918,15 @@ body.sidebar-fechada #sistemaInicio .techcampus-footer {
   color: #c3c7cd !important;
   background-color: #3e434a !important;
 }
+
+
+#calendarDays .calendar-event.ocorrido,
+#calendarDays button.calendar-event.ocorrido,
+#calendarDays .calendar-event.ocorrido * {
+  color: #a0a5ad !important;
+  background-color: #34383e !important;
+  border-color: #555b63 !important;
+  text-decoration-line: line-through !important;
+  text-decoration-color: #a0a5ad !important;
+  opacity: 0.8 !important;
+}
