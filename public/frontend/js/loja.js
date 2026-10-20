@@ -1575,16 +1575,22 @@
     $("gProdSalvar").onclick = salvarProduto;
     $("gProdExcluir").onclick = async () => {
       const p = listaProdAdmin.find((item) => String(item.id) === String(editandoId));
-      if (!p || !confirm("Excluir “" + p.nome + "”? Se houver pedidos antigos, a exclusão definitiva será bloqueada.")) return;
+      if (!p) {
+        setMsg($("gProdMsg"), "Não foi possível identificar o produto. Feche e abra a edição novamente.");
+        return;
+      }
+      // O clique em "Excluir produto" já é a ação explícita do administrador.
+      // Evita window.confirm dentro do modal Bootstrap, que pode ser suprimido pelo navegador.
       const btn = $("gProdExcluir");
       btn.disabled = true;
+      setMsg($("gProdMsg"), "Excluindo produto...");
       try {
         await api("/produtos/" + p.id, { method: "DELETE" });
         modalProdAdmin.hide();
         await Promise.all([carregarProdutosAdmin(), carregarProdutos()]);
         setMsg($("gMsg"), "Produto excluído.", "success");
       } catch (e) {
-        setMsg($("gProdMsg"), e.message);
+        setMsg($("gProdMsg"), e.message || "Não foi possível excluir o produto.");
       } finally {
         btn.disabled = false;
       }
