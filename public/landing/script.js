@@ -1866,10 +1866,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ) || "inicio";
   document.addEventListener("DOMContentLoaded", () => {
     const main = document.querySelector(".layout-wrapper > .main-content");
-    if (!main) {
-      console.warn("TechCampus: .main-content não encontrado.");
-      return;
-    }
+    // Este script também é carregado em páginas públicas sem o layout interno.
+    // Nelas, não há seções de perfil/configurações para reorganizar.
+    if (!main) return;
     // Corrige a estrutura sem recriar os formulários nem perder IDs/eventos.
     for (const id of ["perfil", "configuracoes"]) {
       const section = document.getElementById(id);
