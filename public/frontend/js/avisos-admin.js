@@ -5,7 +5,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("avisosAdminForm");
     const editor = document.getElementById("avisosAdminEditor");
-    const abrir = document.getElementById("avisosAdminAbrir");
+    const abrir = document.getElementById("avisosAdminAdicionar");
     const novo = document.getElementById("avisosAdminNovo");
     const fechar = document.getElementById("avisosAdminFechar");
     const msg = document.getElementById("avisosAdminMsg");
@@ -40,7 +40,7 @@
       editor.hidden = false;
       editor.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-    abrir?.addEventListener("click", () => { limparFormulario(); editor.hidden = false; });
+    abrir?.addEventListener("click", () => { limparFormulario(); editor.hidden = false; editor.scrollIntoView({ behavior: "smooth", block: "nearest" }); });
     novo?.addEventListener("click", limparFormulario);
     fechar?.addEventListener("click", () => { editor.hidden = true; });
     document.addEventListener("tc-editar-aviso", (event) => {
