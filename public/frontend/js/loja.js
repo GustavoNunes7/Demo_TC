@@ -1427,7 +1427,7 @@
     estornado: "secondary",
   };
 
-  let secGerente, modalProdAdmin, editandoId = null, listaProdAdmin = [];
+  let secGerente, modalProdAdmin, editandoId = null, listaProdAdmin = [], gProdPreviewUrl = null;
 
   function tabela(cabecalho, corpo) {
     return h(
@@ -1560,7 +1560,6 @@
     $("gBusca").addEventListener("input", renderProdutosAdmin);
     $("gNovo").onclick = () => abrirProduto(null);
     $("gProdSalvar").onclick = salvarProduto;
-    let gProdPreviewUrl = null;
     $("gProdFoto").addEventListener("change", () => {
       const file = $("gProdFoto").files?.[0];
       if (gProdPreviewUrl) {
@@ -1629,7 +1628,10 @@
 
   async function carregarProdutosAdmin() {
     try {
-      listaProdAdmin = await api("/admin/produtos");
+      const resposta = await api("/admin/produtos");
+      // Produtos excluídos ficam preservados no banco para manter o histórico dos pedidos,
+      // mas não permanecem na lista de gerenciamento.
+      listaProdAdmin = resposta.filter((produto) => Number(produto.ativo) === 1);
       renderProdutosAdmin();
     } catch (e) {
       setMsg($("gMsg"), e.message);
@@ -1777,6 +1779,8 @@
       }
       $("gProdFotoPreview").src = "/landing/images/logoTechCampus.png";
       await carregarProdutosAdmin();
+      // Atualiza também a vitrine e os cards de compra sem exigir recarga da página.
+      await carregarProdutos();
       setMsg($("gMsg"), "Produto salvo com sucesso.", "success");
     } catch (e) {
       setMsg($("gProdMsg"), e.message);
