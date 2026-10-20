@@ -92,7 +92,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const n=document.createElement("span");n.className="calendar-day-number";n.textContent=dayNumber;element.append(n);
     const events=document.createElement("div");events.className="calendar-events";
     const dayAvisos=avisos.filter(a=>a.data===dateString);
-    dayAvisos.slice(0,3).forEach(aviso=>{const event=document.createElement("div");event.className="calendar-event "+aviso.categoria;event.title=aviso.titulo;event.textContent=aviso.titulo;events.append(event);});
+    dayAvisos.slice(0,3).forEach(aviso=>{
+      const event=document.createElement("button");
+      event.type="button";
+      event.className="calendar-event "+aviso.categoria+(Number(aviso.ocorrido)===1?" ocorrido":"");
+      event.title=Number(aviso.ocorrido)===1?"Ocorrido: "+aviso.titulo:aviso.titulo;
+      event.textContent=(Number(aviso.ocorrido)===1?"✓ ":"")+aviso.titulo;
+      event.setAttribute("aria-label",event.title);
+      event.addEventListener("click",(e)=>{e.stopPropagation();abrirAviso(aviso);});
+      events.append(event);
+    });
     element.append(events);
     if(dayAvisos.length){element.classList.add("has-events");element.tabIndex=0;element.setAttribute("role","button");element.setAttribute("aria-label",dayAvisos.length+" aviso(s) em "+formatarData(dateString));element.addEventListener("click",()=>abrirAviso(dayAvisos[0]));element.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();abrirAviso(dayAvisos[0]);}});}
     return element;
