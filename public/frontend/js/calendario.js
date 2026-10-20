@@ -35,6 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const nomesMesesCurto = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
   const categorias = {evento:"Evento",academico:"Acadêmico",reuniao:"Reunião",importante:"Importante"};
   let avisos = [];
+  let filtroAtual = "todos";
   let currentDate = new Date();
 
   function formatarData(valor) {
@@ -92,7 +93,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const n=document.createElement("span");n.className="calendar-day-number";n.textContent=dayNumber;element.append(n);
     const events=document.createElement("div");events.className="calendar-events";
     const dayAvisos=avisos.filter(a=>a.data===dateString);
-    dayAvisos.slice(0,3).forEach(aviso=>{
+    const avisosVisiveis=dayAvisos.filter(a=>filtroAtual==="todos"||a.categoria===filtroAtual);
+    avisosVisiveis.slice(0,3).forEach(aviso=>{
       const event=document.createElement("button");
       event.type="button";
       event.className="calendar-event "+aviso.categoria+(Number(aviso.ocorrido)===1?" ocorrido":"");
@@ -103,7 +105,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       events.append(event);
     });
     element.append(events);
-    if(dayAvisos.length){element.classList.add("has-events");element.tabIndex=0;element.setAttribute("role","button");element.setAttribute("aria-label",dayAvisos.length+" aviso(s) em "+formatarData(dateString));element.addEventListener("click",()=>abrirAviso(dayAvisos[0]));element.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();abrirAviso(dayAvisos[0]);}});}
+    if(avisosVisiveis.length){element.classList.add("has-events");element.tabIndex=0;element.setAttribute("role","button");element.setAttribute("aria-label",avisosVisiveis.length+" aviso(s) em "+formatarData(dateString));element.addEventListener("click",()=>abrirAviso(avisosVisiveis[0]));element.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();abrirAviso(avisosVisiveis[0]);}});}
     return element;
   }
   function renderCalendar(){
@@ -114,8 +116,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const remaining=(7-(calendarDays.children.length%7))%7;for(let day=1;day<=remaining;day++)calendarDays.append(createDayElement(day,true));
   }
   function aplicarFiltro(filtro){
+    filtroAtual = filtro || "todos";
     document.querySelectorAll(".avisos-filter").forEach(btn=>{const ativo=btn.dataset.filter===filtro;btn.classList.toggle("active",ativo);btn.classList.toggle("btn-danger",ativo);btn.classList.toggle("btn-outline-secondary",!ativo);});
-    document.querySelectorAll("#agendaAvisos .agenda-item").forEach(item=>{item.style.display=filtro==="todos"||item.dataset.category===filtro?"flex":"none";});
+    document.querySelectorAll("#agendaAvisos .agenda-item").forEach(item=>{item.style.display=filtroAtual==="todos"||item.dataset.category===filtroAtual?"flex":"none";});
+    document.querySelectorAll("#calendarDays .calendar-day").forEach(day=>{const events=[...day.querySelectorAll(".calendar-event")];events.forEach(event=>{event.style.display=filtroAtual==="todos"||event.classList.contains(filtroAtual)?"":"none";});const visible=events.some(event=>event.style.display!=="none");day.classList.toggle("has-events",visible);});
     if(agendaEmpty){const visiveis=[...document.querySelectorAll("#agendaAvisos .agenda-item")].some(item=>item.style.display!=="none");agendaEmpty.classList.toggle("d-none",visiveis);}
   }
   document.querySelectorAll(".avisos-filter").forEach(button=>button.addEventListener("click",()=>aplicarFiltro(button.dataset.filter||"todos")));
@@ -157,7 +161,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     renderCalendar();
     renderAgenda();
-    aplicarFiltro("todos");
+    aplicarFiltro(filtroAtual);
   }
   // Botão explícito de atualização para evitar depender de cache ou navegação.
   const refreshButton = document.createElement("button");
