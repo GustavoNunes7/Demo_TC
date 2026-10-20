@@ -71,12 +71,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  const urlsDocumentosAbertos = new Set();
-  window.addEventListener("beforeunload", () => {
-    urlsDocumentosAbertos.forEach((url) => URL.revokeObjectURL(url));
-    urlsDocumentosAbertos.clear();
-  });
-
   async function abrirDocumento(id) {
     const janela = window.open("about:blank", "_blank");
     const t = token();
@@ -99,8 +93,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
-      // A URL precisa continuar válida enquanto a aba do documento estiver aberta.
-      urlsDocumentosAbertos.add(url);
 
       if (janela && !janela.closed) {
         janela.location.href = url;
@@ -114,6 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
         link.remove();
       }
 
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (e) {
       console.error("Visualização:", e);
       msg.textContent = e.message || "Não foi possível abrir o documento.";
@@ -524,7 +517,6 @@ document.addEventListener("DOMContentLoaded", function () {
     "inicio",
     "documento",
     "pedidos",
-    "meus-tokens",
     "avisos",
     "sobre",
     "formatura",
@@ -535,11 +527,6 @@ document.addEventListener("DOMContentLoaded", function () {
   ];
 
   function mostrarTela(id) {
-    // Administradores gerenciam pedidos e tokens pelo painel Gerência.
-    if (window.tcPapelUsuario === "admin" && ["pedidos", "meus-tokens"].includes(id)) {
-      id = "gerente";
-      if (window.location.hash !== "#gerente") window.location.hash = "gerente";
-    }
     // Verifica se a tela existe
     const tela = document.getElementById(id);
 
@@ -586,13 +573,11 @@ document.addEventListener("DOMContentLoaded", function () {
   function navegarPeloHash() {
     let id = window.location.hash.replace("#", "");
 
-    if (window.tcPapelUsuario === "admin" && ["pedidos", "meus-tokens"].includes(id)) {
-      id = "gerente";
-      if (window.location.hash !== "#gerente") window.location.hash = "gerente";
+    // Corrige caso não exista hash
+    if (!id || !telas.includes(id)) {
+      id = "inicio";
     }
 
-    // A tela Gerência é criada dinamicamente pelo JavaScript da loja.
-    if (!id || (!telas.includes(id) && id !== "gerente")) id = "inicio";
     mostrarTela(id);
   }
 
@@ -1120,7 +1105,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ".products-filters .btn-filter",
   );
 
-  let products = Array.from(track.querySelectorAll(".product-slide"));
+  const products = Array.from(track.querySelectorAll(".product-slide"));
 
   /*
    * Índice atual do carrossel.
@@ -1380,14 +1365,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Recebe produtos inseridos dinamicamente pela loja/API.
-  document.addEventListener("tc-produtos-atualizados", () => {
-    products = Array.from(track.querySelectorAll(".product-slide"));
-    currentIndex = 0;
-    updateButtons();
-    filterProducts();
-  });
-
   /*
    * Inicialização.
    */
@@ -1397,137 +1374,401 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* =========================================================
-   AVISOS GERAIS - CALENDÁRIO (dados vindos da API)
+   AVISOS GERAIS - CALENDÁRIO
 ========================================================= */
-document.addEventListener("DOMContentLoaded", async () => {
+
+document.addEventListener("DOMContentLoaded", () => {
   const calendarDays = document.getElementById("calendarDays");
   const calendarMonth = document.getElementById("calendarMonth");
-  if (calendarDays?.dataset.calendarOwner === "sistema") return;
+
   const previousButton = document.getElementById("calendarPrev");
   const nextButton = document.getElementById("calendarNext");
   const todayButton = document.getElementById("calendarToday");
-  const agendaContainer = document.getElementById("agendaAvisos");
-  const agendaEmpty = document.getElementById("agendaEmpty");
-  if (!calendarDays || !calendarMonth) return;
 
-  const categoriaValida = ["evento", "academico", "reuniao", "importante"];
-  const nomesMeses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-  const nomesMesesCurto = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
-  const categorias = {evento:"Evento",academico:"Acadêmico",reuniao:"Reunião",importante:"Importante"};
-  let avisos = [];
+  if (!calendarDays || !calendarMonth) {
+    return;
+  }
+
+  /* =======================================================
+     DADOS DOS AVISOS
+
+     Futuramente estes dados podem vir da API:
+     GET /api/avisos
+  ======================================================= */
+
+  const avisos = [
+    {
+      id: 1,
+      titulo: "Semana de Integração 2026",
+      categoria: "evento",
+      data: "2026-09-30",
+      horario: "08:00",
+      local: "Auditório SENAI",
+      descricao:
+        "Participe da Semana de Integração 2026. Serão realizadas atividades para integração entre os alunos.",
+    },
+
+    {
+      id: 2,
+      titulo: "Entrega de Projetos",
+      categoria: "academico",
+      data: "2026-10-02",
+      horario: "23:59",
+      local: "Plataforma TechCampus",
+      descricao: "Prazo final para entrega dos projetos acadêmicos da turma.",
+    },
+
+    {
+      id: 3,
+      titulo: "Reunião da AAPM",
+      categoria: "reuniao",
+      data: "2026-10-05",
+      horario: "15:00",
+      local: "Sala de reuniões da AAPM",
+      descricao:
+        "Reunião para tratar das atividades, projetos e próximos eventos da AAPM.",
+    },
+
+    {
+      id: 4,
+      titulo: "Prazo para documentação",
+      categoria: "importante",
+      data: "2026-10-08",
+      horario: "17:00",
+      local: "TechCampus",
+      descricao: "Último dia para envio dos documentos pendentes para análise.",
+    },
+  ];
+
+  /* =======================================================
+     ESTADO DO CALENDÁRIO
+  ======================================================= */
+
   let currentDate = new Date();
 
-  function formatarData(valor) {
-    if (!valor) return "Data não informada";
-    const [ano, mes, dia] = valor.split("-").map(Number);
-    return new Date(ano, mes - 1, dia).toLocaleDateString("pt-BR", {day:"numeric",month:"long",year:"numeric"});
+  /* =======================================================
+     NOMES DOS MESES
+  ======================================================= */
+
+  const monthNames = [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ];
+
+  /* =======================================================
+     RENDERIZAR CALENDÁRIO
+  ======================================================= */
+
+  function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    calendarMonth.textContent = `${monthNames[month]} ${year}`;
+
+    calendarDays.innerHTML = "";
+
+    /* Primeiro dia do mês */
+
+    const firstDay = new Date(year, month, 1).getDay();
+
+    /* Último dia do mês */
+
+    const lastDate = new Date(year, month + 1, 0).getDate();
+
+    /* Dias do mês anterior */
+
+    const previousLastDate = new Date(year, month, 0).getDate();
+
+    /* =====================================================
+       DIAS DO MÊS ANTERIOR
+    ====================================================== */
+
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const day = createDayElement(previousLastDate - i, true);
+
+      calendarDays.appendChild(day);
+    }
+
+    /* =====================================================
+       DIAS DO MÊS ATUAL
+    ====================================================== */
+
+    for (let dayNumber = 1; dayNumber <= lastDate; dayNumber++) {
+      const day = createDayElement(dayNumber, false);
+
+      calendarDays.appendChild(day);
+    }
+
+    /* =====================================================
+       COMPLETAR GRID
+    ====================================================== */
+
+    const totalCells = calendarDays.children.length;
+
+    const remaining = (7 - (totalCells % 7)) % 7;
+
+    for (let i = 1; i <= remaining; i++) {
+      const day = createDayElement(i, true);
+
+      calendarDays.appendChild(day);
+    }
   }
-  function abrirAviso(aviso) {
-    const modalElement = document.getElementById("avisoModal");
-    if (!modalElement || !window.bootstrap?.Modal) return;
-    const setText = (id, value) => { const el=document.getElementById(id); if(el) el.textContent=value || "Não informado"; };
-    setText("avisoModalLabel", aviso.titulo);
-    setText("modalAvisoCategoria", categorias[aviso.categoria] || "Aviso");
-    const tag=document.getElementById("modalAvisoCategoria"); if(tag) tag.className="agenda-tag "+aviso.categoria;
-    setText("modalAvisoData", formatarData(aviso.data));
-    setText("modalAvisoHorario", aviso.horario || "Não informado");
-    setText("modalAvisoLocal", aviso.local || "Não informado");
-    setText("modalAvisoDescricao", aviso.descricao);
-    window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
-  }
-  function renderAgenda() {
-    if (!agendaContainer) return;
-    agendaContainer.replaceChildren();
-    const hoje = new Date(); hoje.setHours(0,0,0,0);
-    const proximos = avisos.filter(a => { if(!a.data) return false; const [y,m,d]=a.data.split("-").map(Number); return new Date(y,m-1,d)>=hoje; }).sort((a,b)=>a.data.localeCompare(b.data)).slice(0,8);
-    proximos.forEach(aviso=>{
-      const item=document.createElement("button"); item.type="button"; item.className="agenda-item"; item.dataset.category=aviso.categoria; item.dataset.aviso=String(aviso.id);
-      const [y,m,d]=aviso.data.split("-").map(Number);
-      const date=document.createElement("div"); date.className="agenda-date"; const day=document.createElement("span");day.className="agenda-day";day.textContent=String(d).padStart(2,"0");const month=document.createElement("span");month.className="agenda-month";month.textContent=nomesMesesCurto[m-1];date.append(day,month);
-      const content=document.createElement("div");content.className="agenda-content";const tag=document.createElement("span");tag.className="agenda-tag "+aviso.categoria;tag.textContent=categorias[aviso.categoria]||"Aviso";const title=document.createElement("h5");title.textContent=aviso.titulo;const desc=document.createElement("p");desc.textContent=aviso.descricao;const time=document.createElement("small");const icon=document.createElement("i");icon.className="bi bi-clock me-1";time.append(icon,document.createTextNode(aviso.horario||"Horário não informado"));content.append(tag,title,desc,time);const arrow=document.createElement("i");arrow.className="bi bi-chevron-right agenda-arrow";item.append(date,content,arrow);item.addEventListener("click",()=>abrirAviso(aviso));agendaContainer.append(item);
-    });
-    if(agendaEmpty) agendaEmpty.classList.toggle("d-none",proximos.length>0);
-  }
+
+  /* =======================================================
+     CRIAR DIA
+  ======================================================= */
+
   function createDayElement(dayNumber, otherMonth) {
-    const element=document.createElement("div"); element.className="calendar-day";
-    if(otherMonth){element.classList.add("other-month");const n=document.createElement("span");n.className="calendar-day-number";n.textContent=dayNumber;element.append(n);return element;}
-    const year=currentDate.getFullYear(),month=currentDate.getMonth();
-    const dateString=year+"-"+String(month+1).padStart(2,"0")+"-"+String(dayNumber).padStart(2,"0");
-    const now=new Date(); if(dayNumber===now.getDate()&&month===now.getMonth()&&year===now.getFullYear())element.classList.add("today");
-    const n=document.createElement("span");n.className="calendar-day-number";n.textContent=dayNumber;element.append(n);
-    const events=document.createElement("div");events.className="calendar-events";
-    const dayAvisos=avisos.filter(a=>a.data===dateString);
-    dayAvisos.slice(0,3).forEach(aviso=>{const event=document.createElement("div");event.className="calendar-event "+aviso.categoria;event.title=aviso.titulo;event.textContent=aviso.titulo;events.append(event);});
-    element.append(events);
-    if(dayAvisos.length){element.classList.add("has-events");element.tabIndex=0;element.setAttribute("role","button");element.setAttribute("aria-label",dayAvisos.length+" aviso(s) em "+formatarData(dateString));element.addEventListener("click",()=>abrirAviso(dayAvisos[0]));element.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();abrirAviso(dayAvisos[0]);}});}
+    const element = document.createElement("div");
+
+    element.className = "calendar-day";
+
+    if (otherMonth) {
+      element.classList.add("other-month");
+
+      element.innerHTML = `
+        <span class="calendar-day-number">
+          ${dayNumber}
+        </span>
+      `;
+
+      return element;
+    }
+
+    const year = currentDate.getFullYear();
+
+    const month = currentDate.getMonth();
+
+    const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
+
+    /* =====================================================
+       VERIFICAR SE É HOJE
+    ====================================================== */
+
+    const today = new Date();
+
+    if (
+      dayNumber === today.getDate() &&
+      month === today.getMonth() &&
+      year === today.getFullYear()
+    ) {
+      element.classList.add("today");
+    }
+
+    /* =====================================================
+       AVISOS DO DIA
+    ====================================================== */
+
+    const dayAvisos = avisos.filter((aviso) => aviso.data === dateString);
+
+    let eventsHTML = "";
+
+    dayAvisos.forEach((aviso) => {
+      eventsHTML += `
+        <div
+          class="calendar-event ${aviso.categoria}"
+          title="${aviso.titulo}">
+
+          ${aviso.titulo}
+
+        </div>
+      `;
+    });
+
+    element.innerHTML = `
+
+      <span class="calendar-day-number">
+        ${dayNumber}
+      </span>
+
+      <div class="calendar-events">
+        ${eventsHTML}
+      </div>
+
+    `;
+
+    /* =====================================================
+       CLIQUE NO DIA
+    ====================================================== */
+
+    if (dayAvisos.length > 0) {
+      element.addEventListener("click", () => {
+        abrirAviso(dayAvisos[0]);
+      });
+    }
+
     return element;
   }
-  function renderCalendar(){
-    const year=currentDate.getFullYear(),month=currentDate.getMonth();calendarMonth.textContent=nomesMeses[month]+" "+year;calendarDays.replaceChildren();
-    const firstDay=new Date(year,month,1).getDay(),lastDate=new Date(year,month+1,0).getDate(),previousLastDate=new Date(year,month,0).getDate();
-    for(let i=firstDay-1;i>=0;i--)calendarDays.append(createDayElement(previousLastDate-i,true));
-    for(let day=1;day<=lastDate;day++)calendarDays.append(createDayElement(day,false));
-    const remaining=(7-(calendarDays.children.length%7))%7;for(let day=1;day<=remaining;day++)calendarDays.append(createDayElement(day,true));
-  }
-  function aplicarFiltro(filtro){
-    document.querySelectorAll(".avisos-filter").forEach(btn=>{const ativo=btn.dataset.filter===filtro;btn.classList.toggle("active",ativo);btn.classList.toggle("btn-danger",ativo);btn.classList.toggle("btn-outline-secondary",!ativo);});
-    document.querySelectorAll("#agendaAvisos .agenda-item").forEach(item=>{item.style.display=filtro==="todos"||item.dataset.category===filtro?"flex":"none";});
-    if(agendaEmpty){const visiveis=[...document.querySelectorAll("#agendaAvisos .agenda-item")].some(item=>item.style.display!=="none");agendaEmpty.classList.toggle("d-none",visiveis);}
-  }
-  document.querySelectorAll(".avisos-filter").forEach(button=>button.addEventListener("click",()=>aplicarFiltro(button.dataset.filter||"todos")));
-  previousButton?.addEventListener("click",()=>{currentDate.setMonth(currentDate.getMonth()-1);renderCalendar();});
-  nextButton?.addEventListener("click",()=>{currentDate.setMonth(currentDate.getMonth()+1);renderCalendar();});
-  todayButton?.addEventListener("click",()=>{currentDate=new Date();renderCalendar();});
-  async function carregarAvisosCalendario(dataAlvo = "") {
-    try {
-      const response = await fetch("/api/avisos", { cache: "no-store" });
-      const data = await response.json().catch(() => []);
-      if (!response.ok) throw new Error("Não foi possível carregar os avisos.");
-      avisos = (Array.isArray(data) ? data : [])
-        .filter(a => Number(a.publicado ?? 1) === 1)
-        .map(a => ({
-          id: Number(a.id),
-          titulo: String(a.titulo || "Aviso"),
-          categoria: categoriaValida.includes(a.categoria) ? a.categoria : "importante",
-          data: String(a.data_evento || "").trim().slice(0, 10),
-          horario: String(a.horario || ""),
-          local: String(a.local || ""),
-          descricao: String(a.conteudo || "")
-        }))
-        .filter(a => /^\d{4}-\d{2}-\d{2}$/.test(a.data));
-      if (dataAlvo && /^\d{4}-\d{2}-\d{2}$/.test(dataAlvo)) {
-        const [ano, mes] = dataAlvo.split("-").map(Number);
-        currentDate = new Date(ano, mes - 1, 1);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar avisos do calendário:", error);
-      avisos = [];
-    }
-    renderCalendar();
-    renderAgenda();
-    aplicarFiltro("todos");
-  }
-  // Botão explícito de atualização para evitar depender de cache ou navegação.
-  const refreshButton = document.createElement("button");
-  refreshButton.type = "button";
-  refreshButton.className = "btn btn-outline-secondary btn-sm ms-2";
-  refreshButton.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Atualizar calendário';
-  refreshButton.addEventListener("click", () => carregarAvisosCalendario());
-  (todayButton?.parentElement || calendarMonth?.parentElement)?.append(refreshButton);
 
-  document.addEventListener("tc-avisos-atualizados", (event) => {
-    carregarAvisosCalendario(event.detail?.data || "");
+  /* =======================================================
+     ABRIR MODAL
+  ======================================================= */
+
+  function abrirAviso(aviso) {
+    const modalElement = document.getElementById("avisoModal");
+
+    if (!modalElement) return;
+
+    document.getElementById("avisoModalLabel").textContent = aviso.titulo;
+
+    document.getElementById("modalAvisoCategoria").textContent =
+      formatarCategoria(aviso.categoria);
+
+    document.getElementById("modalAvisoCategoria").className =
+      `agenda-tag ${aviso.categoria}`;
+
+    document.getElementById("modalAvisoData").textContent = formatarData(
+      aviso.data,
+    );
+
+    document.getElementById("modalAvisoHorario").textContent = aviso.horario;
+
+    document.getElementById("modalAvisoLocal").textContent = aviso.local;
+
+    document.getElementById("modalAvisoDescricao").textContent =
+      aviso.descricao;
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+    modal.show();
+  }
+
+  /* =======================================================
+     FORMATAR CATEGORIA
+  ======================================================= */
+
+  function formatarCategoria(categoria) {
+    const categorias = {
+      evento: "Evento",
+
+      academico: "Acadêmico",
+
+      reuniao: "Reunião",
+
+      importante: "Importante",
+    };
+
+    return categorias[categoria] || "Aviso";
+  }
+
+  /* =======================================================
+     FORMATAR DATA
+  ======================================================= */
+
+  function formatarData(data) {
+    const partes = data.split("-");
+
+    const dataObj = new Date(
+      Number(partes[0]),
+      Number(partes[1]) - 1,
+      Number(partes[2]),
+    );
+
+    return dataObj.toLocaleDateString("pt-BR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }
+
+  /* =======================================================
+     NAVEGAÇÃO
+  ======================================================= */
+
+  previousButton?.addEventListener("click", () => {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+
+    renderCalendar();
   });
-  window.addEventListener("hashchange", () => {
-    if (location.hash === "#avisos") carregarAvisosCalendario();
+
+  nextButton?.addEventListener("click", () => {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+
+    renderCalendar();
   });
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && location.hash === "#avisos") carregarAvisosCalendario();
+
+  todayButton?.addEventListener("click", () => {
+    currentDate = new Date();
+
+    renderCalendar();
   });
-  document.querySelectorAll('a[href="#avisos"]').forEach((link) => {
-    link.addEventListener("click", () => carregarAvisosCalendario());
+
+  /* =======================================================
+     FILTROS
+  ======================================================= */
+
+  const filterButtons = document.querySelectorAll(".avisos-filter");
+
+  const agendaItems = document.querySelectorAll(".agenda-item");
+
+  filterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.filter;
+
+      filterButtons.forEach((btn) => {
+        btn.classList.remove("active");
+        btn.classList.remove("btn-danger");
+
+        btn.classList.add("btn-outline-secondary");
+      });
+
+      button.classList.add("active");
+      button.classList.remove("btn-outline-secondary");
+      button.classList.add("btn-danger");
+
+      let visible = 0;
+
+      agendaItems.forEach((item) => {
+        const category = item.dataset.category;
+
+        const show = filter === "todos" || category === filter;
+
+        item.style.display = show ? "flex" : "none";
+
+        if (show) {
+          visible++;
+        }
+      });
+
+      const empty = document.getElementById("agendaEmpty");
+
+      if (empty) {
+        empty.classList.toggle("d-none", visible !== 0);
+      }
+    });
   });
-  await carregarAvisosCalendario();
+
+  /* =======================================================
+     CLIQUE NOS PRÓXIMOS AVISOS
+  ======================================================= */
+
+  agendaItems.forEach((item) => {
+    item.addEventListener("click", () => {
+      const id = Number(item.dataset.aviso);
+
+      const aviso = avisos.find((aviso) => aviso.id === id);
+
+      if (aviso) {
+        abrirAviso(aviso);
+      }
+    });
+  });
+
+  /* =======================================================
+     INICIALIZAR
+  ======================================================= */
+
+  renderCalendar();
 });
 
 /* VOLTAR DAS CONFIGURAÇÕES */
@@ -1626,9 +1867,10 @@ document.addEventListener("DOMContentLoaded", () => {
     ) || "inicio";
   document.addEventListener("DOMContentLoaded", () => {
     const main = document.querySelector(".layout-wrapper > .main-content");
-    // Este script também é carregado por sistema.html, que não usa
-    // o layout da landing page. Nesse caso, esta rotina não se aplica.
-    if (!main) return;
+    if (!main) {
+      console.warn("TechCampus: .main-content não encontrado.");
+      return;
+    }
     // Corrige a estrutura sem recriar os formulários nem perder IDs/eventos.
     for (const id of ["perfil", "configuracoes"]) {
       const section = document.getElementById(id);
@@ -1743,14 +1985,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     let usuario = null;
+
     try {
-        usuario = JSON.parse(sessionStorage.getItem("techcampus_usuario"))
-          || JSON.parse(localStorage.getItem("usuario"));
+        usuario = JSON.parse(localStorage.getItem("usuario"));
     } catch (erro) {
         usuario = null;
     }
 
-    const tipoUsuario = usuario?.papel || usuario?.tipo || usuario?.perfil || usuario?.role;
+    const tipoUsuario = usuario?.tipo || usuario?.perfil || usuario?.role;
 
     const ehAdmin =
         tipoUsuario &&
@@ -1770,9 +2012,6 @@ document.addEventListener("DOMContentLoaded", () => {
    PEDIDOS DISPONÍVEIS
    ========================================================= */
 document.addEventListener("DOMContentLoaded", () => {
-  // A loja integrada de loja.js já controla esses cards com carrinho e pagamento.
-  // Evita o fluxo legado em localStorage criar um segundo pedido ao mesmo clique.
-  if (document.getElementById("productsTrack")) return;
   const botoes = document.querySelectorAll("#pedidos .product-slide button:not(.products-control)");
 
   botoes.forEach((botao) => {
@@ -1994,11 +2233,12 @@ const faqItems =
 
 faqItems.forEach(function (item) {
 
-    const button = item.querySelector(".faq-question");
-    const symbol = item.querySelector(".symbol");
+    const button =
+        item.querySelector(".faq-question");
 
-    // Algumas telas reutilizam script.js sem conter o HTML do FAQ.
-    if (!button) return;
+    const symbol =
+        item.querySelector(".symbol");
+
 
     button.addEventListener("click", function () {
 
