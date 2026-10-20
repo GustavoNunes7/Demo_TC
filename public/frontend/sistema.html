@@ -1389,9 +1389,6 @@
           <div class="d-flex flex-wrap gap-2"><button type="submit" class="btn btn-danger" id="avisosAdminSalvar">Publicar aviso</button><button type="button" class="btn btn-outline-light" id="avisosAdminNovo">Novo aviso</button><button type="button" class="btn btn-outline-secondary" id="avisosAdminFechar">Fechar editor</button></div>
           <div id="avisosAdminMsg" class="small mt-3" role="status"></div>
         </form>
-        <hr class="border-secondary">
-        <h5 class="h6">Avisos publicados</h5>
-        <div id="avisosAdminLista"></div>
       </div>
     </div>
 
@@ -1697,13 +1694,13 @@
         </div>
 
 
-        <div class="modal-footer border-secondary">
-          <button
-            type="button"
-            class="btn btn-outline-secondary"
-            data-bs-dismiss="modal">
-            Fechar
-          </button>
+        <div class="modal-footer border-secondary flex-wrap">
+          <div id="modalAvisoAdminAcoes" class="d-none me-auto d-flex flex-wrap gap-2">
+            <button type="button" id="modalAvisoEditar" class="btn btn-outline-light">Editar</button>
+            <button type="button" id="modalAvisoOcorrido" class="btn btn-outline-success">Marcar como ocorrido</button>
+            <button type="button" id="modalAvisoExcluir" class="btn btn-outline-danger">Excluir</button>
+          </div>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
         </div>
       </div>
     </div>
