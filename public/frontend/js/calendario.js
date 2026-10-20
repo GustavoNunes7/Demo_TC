@@ -20,6 +20,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     calendarDays.insertAdjacentElement("afterend", statusCalendar);
   }
 
+  let usuarioSessao = {};
+  try { usuarioSessao = JSON.parse(sessionStorage.getItem("techcampus_usuario") || "{}"); } catch {}
+  const papelSessao = String(usuarioSessao.papel || usuarioSessao.role || "").toLowerCase();
+  const isAdminSessao = ["admin", "administrador"].includes(papelSessao);
+  const adminTools = document.getElementById("avisosAdminFerramentas");
+  const addButton = document.getElementById("avisosAdminAdicionar");
+  if (isAdminSessao) {
+    adminTools?.classList.remove("d-none");
+    addButton?.classList.remove("d-none");
+  }
   const categoriaValida = ["evento", "academico", "reuniao", "importante"];
   const nomesMeses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
   const nomesMesesCurto = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
@@ -43,9 +53,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     setText("modalAvisoHorario", aviso.horario || "Não informado");
     setText("modalAvisoLocal", aviso.local || "Não informado");
     setText("modalAvisoDescricao", aviso.descricao);
-    const adminTools = document.getElementById("avisosAdminFerramentas");
     const adminActions = document.getElementById("modalAvisoAdminAcoes");
-    const isAdmin = !!adminTools && !adminTools.classList.contains("d-none");
+    const isAdmin = isAdminSessao;
     if (adminActions) {
       adminActions.classList.toggle("d-none", !isAdmin);
       const edit = document.getElementById("modalAvisoEditar");
