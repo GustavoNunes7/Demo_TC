@@ -3904,3 +3904,17 @@ body.sidebar-fechada #sistemaInicio .techcampus-footer {
     min-width: 0;
     width: auto;
 }
+
+/* Avisos concluídos: ficam discretos e riscados no calendário. */
+.calendar-event.ocorrido {
+  color: #a0a5ad !important;
+  background-color: #34383e !important;
+  border-color: #555b63 !important;
+  text-decoration: line-through !important;
+  opacity: 0.78;
+}
+.calendar-event.ocorrido:hover,
+.calendar-event.ocorrido:focus-visible {
+  color: #c3c7cd !important;
+  background-color: #3e434a !important;
+}
