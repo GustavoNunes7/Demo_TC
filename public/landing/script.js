@@ -416,11 +416,9 @@ function updateProductsCarousel() {
    ========================================================= */
 
 nextButton.addEventListener("click", () => {
-  const products = document.querySelectorAll(".product-slide");
-
+  const products = Array.from(document.querySelectorAll("#productsTrack .product-slide")).filter((p) => !p.classList.contains("d-none"));
   const visibleProducts = getVisibleProducts();
-
-  const maxPosition = products.length - visibleProducts;
+  const maxPosition = Math.max(0, products.length - visibleProducts);
 
   if (currentProduct < maxPosition) {
     currentProduct++;
