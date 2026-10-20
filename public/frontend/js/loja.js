@@ -160,12 +160,14 @@
         btn.disabled = false;
         btn.textContent = btn.dataset.original;
 
-        if (!p) {
+        if (!p || Number(p.ativo) !== 1) {
+          card.classList.add("d-none");
           btn.disabled = true;
           btn.textContent = "Indisponível";
           btn.onclick = null;
           return;
         }
+        card.classList.remove("d-none");
 
         usados.add(p.id);
         const por = card.querySelector(".preco-por");
@@ -194,6 +196,7 @@
     if (!track) return;
     track.querySelectorAll(".product-slide[data-tc-dinamico='1']").forEach((card) => card.remove());
     produtos.filter((p) => !usados.has(p.id)).forEach((p) => {
+      if (Number(p.ativo) !== 1) return;
       const slide = h("div", { class: "product-slide", "data-category": norm(p.categoria), "data-tc-dinamico": "1" });
       const card = h("div", { class: "card bg-dark text-white h-100 border-secondary rounded-3 p-3 product-card" });
       const imageBox = h("div", { class: "text-center my-3 product-img-box" });
@@ -1467,6 +1470,7 @@
         <div id="gProdutos">
           <div class="d-flex flex-wrap gap-2 mb-3">
             <input id="gBusca" class="form-control bg-dark text-white border-secondary" style="max-width:320px" placeholder="Buscar produto ou categoria">
+            <button type="button" class="btn btn-outline-light" id="gAtualizarProdutos"><i class="bi bi-arrow-clockwise me-1"></i>Atualizar produtos</button>
             <button type="button" class="btn btn-danger ms-auto" id="gNovo"><i class="bi bi-plus-lg me-1"></i>Novo produto</button>
           </div>
           <div id="gProdTabela"></div>
@@ -1559,6 +1563,14 @@
     $("gAvisoAtualizar").onclick = carregarAvisosAdmin;
     $("gBusca").addEventListener("input", renderProdutosAdmin);
     $("gNovo").onclick = () => abrirProduto(null);
+    $("gAtualizarProdutos").onclick = async () => {
+      const btn = $("gAtualizarProdutos");
+      btn.disabled = true;
+      try {
+        await Promise.all([carregarProdutosAdmin(), carregarProdutos()]);
+        setMsg($("gMsg"), "Lista de produtos atualizada.", "success");
+      } finally { btn.disabled = false; }
+    };
     $("gProdSalvar").onclick = salvarProduto;
     $("gProdFoto").addEventListener("change", () => {
       const file = $("gProdFoto").files?.[0];
@@ -1631,7 +1643,7 @@
       const resposta = await api("/admin/produtos");
       // Produtos excluídos ficam preservados no banco para manter o histórico dos pedidos,
       // mas não permanecem na lista de gerenciamento.
-      listaProdAdmin = resposta.filter((produto) => Number(produto.ativo) === 1);
+      listaProdAdmin = resposta;
       renderProdutosAdmin();
     } catch (e) {
       setMsg($("gMsg"), e.message);
@@ -1685,11 +1697,15 @@
                       if (!confirm("Remover “" + p.nome + "” da loja? O histórico de pedidos será preservado.")) return;
                       try {
                         await api("/produtos/" + p.id, { method: "DELETE" });
-                        await carregarProdutosAdmin();
-                        setMsg($("gMsg"), "Produto removido da loja.", "success");
+                        await Promise.all([carregarProdutosAdmin(), carregarProdutos()]);
+                        setMsg($("gMsg"), "Produto removido da loja e da vitrine.", "success");
                       } catch (e) { setMsg($("gMsg"), e.message); }
                     }
-                  }, p.ativo ? "Excluir" : "Excluído")
+                  }, "Excluir"),
+                  !p.ativo ? h("button", { class: "btn btn-sm btn-outline-success", type: "button", onclick: async () => {
+                    try { await api("/produtos/" + p.id, { method: "PATCH", body: JSON.stringify({ ...p, ativo: 1 }) }); await Promise.all([carregarProdutosAdmin(), carregarProdutos()]); setMsg($("gMsg"), "Produto reativado.", "success"); }
+                    catch (e) { setMsg($("gMsg"), e.message); }
+                  } }, "Reativar") : null
                 )
               )
             )
