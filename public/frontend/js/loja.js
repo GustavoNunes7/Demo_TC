@@ -1692,13 +1692,12 @@
                   h("button", {
                     class: "btn btn-sm btn-outline-danger",
                     type: "button",
-                    disabled: !p.ativo,
                     onclick: async () => {
-                      if (!confirm("Remover “" + p.nome + "” da loja? O histórico de pedidos será preservado.")) return;
+                      if (!confirm("Excluir definitivamente “" + p.nome + "”? Se houver pedidos antigos, o sistema impedirá a exclusão para preservar o histórico.")) return;
                       try {
                         await api("/produtos/" + p.id, { method: "DELETE" });
                         await Promise.all([carregarProdutosAdmin(), carregarProdutos()]);
-                        setMsg($("gMsg"), "Produto removido da loja e da vitrine.", "success");
+                        setMsg($("gMsg"), "Produto excluído.", "success");
                       } catch (e) { setMsg($("gMsg"), e.message); }
                     }
                   }, "Excluir"),

@@ -362,12 +362,22 @@ r.patch("/produtos/:id", autenticar, admin, (req, res) => {
   );
   res.json(get("produtos", p.id));
 });
-// Exclusão lógica: preserva o histórico de pedidos que referencia o produto.
+// Exclui produtos sem histórico; preserva os que aparecem em pedidos antigos.
 r.delete("/produtos/:id", autenticar, admin, (req, res) => {
   const id = positiveId(req.params.id);
   const produto = get("produtos", id);
   if (!produto) return res.sendStatus(404);
-  db.prepare("UPDATE produtos SET ativo=0 WHERE id=?").run(id);
+
+  const historico = db.prepare(
+    "SELECT COUNT(*) AS total FROM itens_pedido WHERE produto_id=?"
+  ).get(id);
+  if (Number(historico.total) > 0) {
+    return res.status(409).json({
+      erro: "Este produto possui pedidos no histórico e não pode ser excluído definitivamente. Desative-o para removê-lo da loja sem perder os registros."
+    });
+  }
+
+  db.prepare("DELETE FROM produtos WHERE id=?").run(id);
   res.status(204).end();
 });
 
