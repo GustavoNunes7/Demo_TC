@@ -1,6 +1,10 @@
 (() => {
   "use strict";
 
+  // Evita registrar os mesmos eventos duas vezes se o script for incluído/reexecutado.
+  if (window.__tcAvisosAdminInitialized) return;
+  window.__tcAvisosAdminInitialized = true;
+
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("avisosAdminForm");
     const lista = document.getElementById("avisosAdminLista");
@@ -10,6 +14,9 @@
     const fechar = document.getElementById("avisosAdminFechar");
     const msg = document.getElementById("avisosAdminMsg");
     if (!form || !lista || !editor) return;
+
+    // Bloqueia submissões repetidas enquanto a API está processando o aviso.
+    let salvandoAviso = false;
 
     const byId = (id) => document.getElementById(id);
     const token = () => sessionStorage.getItem("techcampus_token");
@@ -132,6 +139,8 @@
     fechar?.addEventListener("click", () => { editor.hidden = true; });
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (salvandoAviso) return;
+      salvandoAviso = true;
       const id = byId("avisosAdminId").value;
       const payload = {
         titulo: byId("avisosAdminNome").value.trim(),
@@ -158,6 +167,7 @@
       } catch (error) {
         mensagem(error.message || "Erro ao salvar aviso.", true);
       } finally {
+        salvandoAviso = false;
         salvar.disabled = false;
       }
     });
