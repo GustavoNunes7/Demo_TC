@@ -54,6 +54,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     setText("modalAvisoHorario", aviso.horario || "Não informado");
     setText("modalAvisoLocal", aviso.local || "Não informado");
     setText("modalAvisoDescricao", aviso.descricao);
+    const descricaoBloco = document.getElementById("modalAvisoDescricaoBloco");
+    if (descricaoBloco) descricaoBloco.hidden = !String(aviso.descricao || "").trim();
     const adminActions = document.getElementById("modalAvisoAdminAcoes");
     const isAdmin = isAdminSessao;
     if (adminActions) {
