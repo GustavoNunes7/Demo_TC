@@ -909,7 +909,7 @@ r.post("/avisos", autenticar, admin, (req, res) => {
   const dataEvento = clean(req.body.data_evento, 10);
   const horario = clean(req.body.horario, 5);
   const local = clean(req.body.local, 150);
-  if (!titulo || !conteudo || !/^\d{4}-\d{2}-\d{2}$/.test(dataEvento) || !Number.isFinite(Date.parse(dataEvento + "T12:00:00")) || !allowed(categoria, ["evento", "academico", "reuniao", "importante"]) || (horario && !/^\d{2}:\d{2}$/.test(horario))) return bad(res, "Preencha título, descrição, categoria e uma data válida.");
+  if (!titulo || !/^\d{4}-\d{2}-\d{2}$/.test(dataEvento) || !Number.isFinite(Date.parse(dataEvento + "T12:00:00")) || !allowed(categoria, ["evento", "academico", "reuniao", "importante"]) || (horario && !/^\d{2}:\d{2}$/.test(horario))) return bad(res, "Preencha título, categoria e uma data válida.");
   const info = db.prepare("INSERT INTO avisos(titulo,conteudo,categoria,data_evento,horario,local,publicado) VALUES(?,?,?,?,?,?,1)").run(titulo, conteudo, categoria, dataEvento, horario, local);
   const avisoCriado = get("avisos", info.lastInsertRowid);
 
@@ -948,7 +948,7 @@ r.patch("/avisos/:id", autenticar, admin, (req, res) => {
   const dataEvento = req.body.data_evento === undefined ? aviso.data_evento : clean(req.body.data_evento, 10);
   const horario = req.body.horario === undefined ? aviso.horario : clean(req.body.horario, 5);
   const local = req.body.local === undefined ? aviso.local : clean(req.body.local, 150);
-  if (!titulo || !conteudo || !/^\d{4}-\d{2}-\d{2}$/.test(dataEvento || "") || !Number.isFinite(Date.parse(dataEvento + "T12:00:00")) || !allowed(categoria, ["evento", "academico", "reuniao", "importante"]) || (horario && !/^\d{2}:\d{2}$/.test(horario))) return bad(res, "Dados do aviso inválidos.");
+  if (!titulo || !/^\d{4}-\d{2}-\d{2}$/.test(dataEvento || "") || !Number.isFinite(Date.parse(dataEvento + "T12:00:00")) || !allowed(categoria, ["evento", "academico", "reuniao", "importante"]) || (horario && !/^\d{2}:\d{2}$/.test(horario))) return bad(res, "Dados do aviso inválidos.");
   db.prepare("UPDATE avisos SET titulo=?,conteudo=?,categoria=?,data_evento=?,horario=?,local=? WHERE id=?").run(titulo, conteudo, categoria, dataEvento, horario || null, local, aviso.id);
   res.json(get("avisos", aviso.id));
 });
