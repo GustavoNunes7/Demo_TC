@@ -3949,3 +3949,14 @@ body.sidebar-fechada #sistemaInicio .techcampus-footer {
   background-color: #34383e !important;
   border-color: #555b63 !important;
 }
+
+
+/* Correção definitiva: o texto do aviso ocorrido recebe o risco no próprio span. */
+#calendarDays .calendar-event.ocorrido .calendar-event-title {
+  display: inline-block !important;
+  color: #a0a5ad !important;
+  text-decoration: line-through !important;
+  text-decoration-line: line-through !important;
+  text-decoration-color: #a0a5ad !important;
+  text-decoration-thickness: 1.5px !important;
+}
