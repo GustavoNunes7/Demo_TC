@@ -2156,13 +2156,23 @@
     const tools = $("avisosAdminFerramentas");
     const form = $("avisosAdminForm");
     if (!tools || !form) return;
+
+    // Os controles podem não existir em todas as versões da tela de Avisos.
+    const abrir = $("avisosAdminAbrir");
+    const novo = $("avisosAdminNovo");
+    const fechar = $("avisosAdminFechar");
+    const editor = $("avisosAdminEditor");
+
+    // Não inicializa um editor incompleto; evita addEventListener em null.
+    if (!abrir || !novo || !fechar || !editor) return;
+
     tools.classList.remove("d-none");
-    $("avisosAdminAbrir").addEventListener("click", async () => {
-      $("avisosAdminEditor").hidden = false;
+    abrir.addEventListener("click", async () => {
+      editor.hidden = false;
       await carregarAvisosPaginaAdmin();
     });
-    $("avisosAdminNovo").addEventListener("click", resetAvisoPaginaAdmin);
-    $("avisosAdminFechar").addEventListener("click", () => { $("avisosAdminEditor").hidden = true; });
+    novo.addEventListener("click", resetAvisoPaginaAdmin);
+    fechar.addEventListener("click", () => { editor.hidden = true; });
     form.addEventListener("submit", salvarAvisoPaginaAdmin);
     document.addEventListener("tc-avisos-atualizados", carregarAvisosPaginaAdmin);
   }
