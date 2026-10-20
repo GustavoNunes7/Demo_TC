@@ -100,11 +100,9 @@
                 const body = await response.json().catch(() => ({}));
                 throw new Error(body.erro || "A API não confirmou a exclusão (HTTP " + response.status + ").");
               }
-              // Remove o card somente após a API confirmar a exclusão.
-              card.remove();
-              if (!lista.querySelector("[data-aviso-id]")) {
-                lista.innerHTML = '<p class="text-secondary mb-0">Nenhum aviso publicado.</p>';
-              }
+              // Reconsulta a API após excluir para sincronizar a lista com o banco.
+              // Isso também corrige a tela caso o card tenha sido renderizado por código antigo.
+              await carregarLista();
               mensagem("Aviso excluído com sucesso.");
               dispararAtualizacaoCalendario();
             } catch (error) {
