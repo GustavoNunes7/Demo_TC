@@ -39,6 +39,10 @@ if (!colunasToken.includes("expira_em")) db.exec("ALTER TABLE tokens_retirada AD
 if (!colunasToken.includes("usado")) db.exec("ALTER TABLE tokens_retirada ADD COLUMN usado INTEGER NOT NULL DEFAULT 0");
 if (!colunasToken.includes("usado_em")) db.exec("ALTER TABLE tokens_retirada ADD COLUMN usado_em TEXT");
 
+// Campo persistente para marcar eventos como ocorridos.
+const colunasAvisos = db.prepare("PRAGMA table_info(avisos)").all().map((c) => c.name);
+if (!colunasAvisos.includes("ocorrido")) db.exec("ALTER TABLE avisos ADD COLUMN ocorrido INTEGER NOT NULL DEFAULT 0 CHECK(ocorrido IN (0,1))");
+
 // Caixa de notificações para aluno e administrador.
 db.exec(`
   CREATE TABLE IF NOT EXISTS notificacoes (
@@ -932,7 +936,12 @@ r.post("/avisos", autenticar, admin, (req, res) => {
 });
 r.patch("/avisos/:id", autenticar, admin, (req, res) => {
   const aviso = get("avisos", positiveId(req.params.id));
-  if (!aviso) return res.sendStatus(404);
+  if (!aviso || Number(aviso.publicado) !== 1) return res.sendStatus(404);
+  if (req.body.ocorrido !== undefined) {
+    if (![0, 1, false, true].includes(req.body.ocorrido)) return bad(res, "Estado de ocorrência inválido.");
+    db.prepare("UPDATE avisos SET ocorrido=? WHERE id=?").run(Number(req.body.ocorrido), aviso.id);
+    return res.json(get("avisos", aviso.id));
+  }
   const titulo = req.body.titulo === undefined ? aviso.titulo : clean(req.body.titulo, 150);
   const conteudo = req.body.conteudo === undefined ? aviso.conteudo : clean(req.body.conteudo, 5000);
   const categoria = req.body.categoria === undefined ? aviso.categoria : req.body.categoria;
