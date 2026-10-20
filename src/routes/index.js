@@ -936,8 +936,14 @@ r.patch("/avisos/:id", autenticar, admin, (req, res) => {
   res.json(get("avisos", aviso.id));
 });
 r.delete("/avisos/:id", autenticar, admin, (req, res) => {
-  const result = db.prepare("UPDATE avisos SET publicado=0 WHERE id=? AND publicado=1").run(positiveId(req.params.id));
-  res.status(result.changes ? 204 : 404).end();
+  const id = positiveId(req.params.id);
+  const aviso = get("avisos", id);
+  if (!aviso) return res.sendStatus(404);
+
+  // Exclusão lógica: remove do calendário público, mantendo o registro para auditoria.
+  // Retorna sucesso também se o aviso já estava despublicado.
+  db.prepare("UPDATE avisos SET publicado=0 WHERE id=?").run(id);
+  res.status(204).end();
 });
 
 // Conteúdo informativo de formatura.
