@@ -10,6 +10,9 @@
     const fechar = document.getElementById("avisosAdminFechar");
     const msg = document.getElementById("avisosAdminMsg");
     if (!form || !editor) return;
+    // A descrição é opcional tanto ao criar quanto ao editar avisos.
+    const campoDescricao = document.getElementById("avisosAdminDescricao");
+    campoDescricao?.removeAttribute("required");
     let salvandoAviso = false;
     const byId = (id) => document.getElementById(id);
     const token = () => sessionStorage.getItem("techcampus_token");
