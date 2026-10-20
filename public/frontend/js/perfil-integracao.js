@@ -152,6 +152,12 @@
     // Ao trocar de conta, nunca manter a imagem da sessão anterior enquanto
     // a API carrega ou quando o usuário atual ainda não tem foto cadastrada.
     const avatar = document.querySelector("#userDropdown .user-avatar");
+    const dropdown = document.getElementById("userDropdown");
+    // Limpa ícones/imagens duplicados que versões anteriores podem ter deixado
+    // diretamente no link do usuário, fora do círculo do avatar.
+    if (dropdown) {
+      dropdown.querySelectorAll(":scope > img, :scope > i.bi-person-fill, :scope > .user-avatar + i").forEach(el => el.remove());
+    }
     const objectUrlAnterior = img.dataset.objectUrl;
     if (objectUrlAnterior) {
       URL.revokeObjectURL(objectUrlAnterior);
