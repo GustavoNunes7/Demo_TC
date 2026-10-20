@@ -516,6 +516,7 @@ document.addEventListener("DOMContentLoaded", function () {
     "inicio",
     "documento",
     "pedidos",
+    "meus-tokens",
     "avisos",
     "sobre",
     "formatura",
