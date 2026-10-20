@@ -3935,3 +3935,17 @@ body.sidebar-fechada #sistemaInicio .techcampus-footer {
 #calendarDays .calendar-event.ocorrido, #calendarDays button.calendar-event.ocorrido { color:#a0a5ad!important; background:#34383e!important; border-color:#555b63!important; text-decoration:line-through!important; text-decoration-color:#a0a5ad!important; opacity:.8!important; }
 #agendaAvisos .agenda-item.ocorrido .agenda-content h5, #agendaAvisos .agenda-item.ocorrido .agenda-content p, #agendaAvisos .agenda-item.ocorrido .agenda-content small { color:#a0a5ad!important; text-decoration:line-through!important; text-decoration-color:#a0a5ad!important; }
 #agendaAvisos .agenda-item.ocorrido { opacity:.78; }
+
+
+/* Texto do aviso concluído: o risco é aplicado ao elemento interno para não depender do estilo do botão. */
+#calendarDays button.calendar-event.ocorrido .calendar-event-title {
+  color: #a0a5ad !important;
+  text-decoration: line-through !important;
+  text-decoration-line: line-through !important;
+  text-decoration-color: currentColor !important;
+  opacity: 0.85;
+}
+#calendarDays button.calendar-event.ocorrido {
+  background-color: #34383e !important;
+  border-color: #555b63 !important;
+}
