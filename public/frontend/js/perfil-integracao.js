@@ -166,6 +166,12 @@
     img.src = "../landing/images/logoTechCampus.png";
     if (avatar) {
       avatar.replaceChildren();
+      avatar.style.width = "38px";
+      avatar.style.height = "38px";
+      avatar.style.minWidth = "38px";
+      avatar.style.flex = "0 0 38px";
+      avatar.style.overflow = "hidden";
+      avatar.style.position = "relative";
       const icone = document.createElement("i");
       icone.className = "bi bi-person-fill text-white fs-5";
       avatar.append(icone);
@@ -190,7 +196,11 @@
         avatarImg.style.width = "38px";
         avatarImg.style.height = "38px";
         avatarImg.style.objectFit = "cover";
-        avatar.append(avatarImg);
+        avatarImg.style.display = "block";
+        avatarImg.style.position = "absolute";
+        avatarImg.style.inset = "0";
+        avatarImg.style.borderRadius = "50%";
+        avatar.replaceChildren(avatarImg);
         avatarImg.src = url;
       }
     } catch {
