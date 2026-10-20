@@ -2232,12 +2232,12 @@ const faqItems =
 
 faqItems.forEach(function (item) {
 
-    const button =
-        item.querySelector(".faq-question");
+    const button = item.querySelector(".faq-question");
+    const symbol = item.querySelector(".symbol");
 
-    const symbol =
-        item.querySelector(".symbol");
-
+    // Algumas páginas reutilizam .faq-item sem o botão de pergunta.
+    // Ignora esses itens em vez de interromper a execução do script inteiro.
+    if (!button) return;
 
     button.addEventListener("click", function () {
 
