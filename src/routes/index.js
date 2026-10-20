@@ -894,7 +894,9 @@ r.get("/avisos", (_req, res) => {
   res.json(db.prepare("SELECT * FROM avisos WHERE publicado=1 ORDER BY CASE WHEN data_evento IS NULL OR data_evento='' THEN 1 ELSE 0 END, data_evento ASC, id DESC").all());
 });
 r.get("/admin/avisos", autenticar, admin, (_req, res) => {
-  res.json(db.prepare("SELECT * FROM avisos ORDER BY publicado DESC, data_evento ASC, id DESC").all());
+  // A lista "Avisos publicados" deve retornar somente avisos ativos.
+  // Avisos despublicados pela rota DELETE ficam preservados no banco, mas não reaparecem na interface.
+  res.json(db.prepare("SELECT * FROM avisos WHERE publicado=1 ORDER BY data_evento ASC, id DESC").all());
 });
 r.post("/avisos", autenticar, admin, (req, res) => {
   const titulo = clean(req.body.titulo, 150);
