@@ -3930,3 +3930,8 @@ body.sidebar-fechada #sistemaInicio .techcampus-footer {
   text-decoration-color: #a0a5ad !important;
   opacity: 0.8 !important;
 }
+
+
+#calendarDays .calendar-event.ocorrido, #calendarDays button.calendar-event.ocorrido { color:#a0a5ad!important; background:#34383e!important; border-color:#555b63!important; text-decoration:line-through!important; text-decoration-color:#a0a5ad!important; opacity:.8!important; }
+#agendaAvisos .agenda-item.ocorrido .agenda-content h5, #agendaAvisos .agenda-item.ocorrido .agenda-content p, #agendaAvisos .agenda-item.ocorrido .agenda-content small { color:#a0a5ad!important; text-decoration:line-through!important; text-decoration-color:#a0a5ad!important; }
+#agendaAvisos .agenda-item.ocorrido { opacity:.78; }
