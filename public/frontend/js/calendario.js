@@ -43,6 +43,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     setText("modalAvisoHorario", aviso.horario || "Não informado");
     setText("modalAvisoLocal", aviso.local || "Não informado");
     setText("modalAvisoDescricao", aviso.descricao);
+    const adminTools = document.getElementById("avisosAdminFerramentas");
+    const adminActions = document.getElementById("modalAvisoAdminAcoes");
+    const isAdmin = !!adminTools && !adminTools.classList.contains("d-none");
+    if (adminActions) {
+      adminActions.classList.toggle("d-none", !isAdmin);
+      const edit = document.getElementById("modalAvisoEditar");
+      const occurred = document.getElementById("modalAvisoOcorrido");
+      const remove = document.getElementById("modalAvisoExcluir");
+      if (edit) edit.dataset.avisoId = String(aviso.id);
+      if (remove) remove.dataset.avisoId = String(aviso.id);
+      if (occurred) {
+        occurred.dataset.avisoId = String(aviso.id);
+        occurred.dataset.ocorrido = Number(aviso.ocorrido) === 1 ? "0" : "1";
+        occurred.textContent = Number(aviso.ocorrido) === 1 ? "Desmarcar como ocorrido" : "Marcar como ocorrido";
+      }
+    }
     window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
   }
   function renderAgenda() {
@@ -103,7 +119,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           data: String(a.data_evento || a.criado_em || "").trim().slice(0, 10),
           horario: String(a.horario || ""),
           local: String(a.local || ""),
-          descricao: String(a.conteudo || "")
+          descricao: String(a.conteudo || ""),
+          ocorrido: Number(a.ocorrido || 0)
         }))
         .filter(a => /^\d{4}-\d{2}-\d{2}$/.test(a.data));
       if (dataAlvo && /^\d{4}-\d{2}-\d{2}$/.test(dataAlvo)) {
@@ -134,6 +151,52 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.addEventListener("tc-avisos-atualizados", (event) => {
     carregarAvisosCalendario(event.detail?.data || "");
+  });
+
+  document.getElementById("modalAvisoEditar")?.addEventListener("click", (event) => {
+    const aviso = avisos.find(item => String(item.id) === String(event.currentTarget.dataset.avisoId));
+    if (!aviso) return;
+    document.dispatchEvent(new CustomEvent("tc-editar-aviso", { detail: { aviso } }));
+    window.bootstrap.Modal.getOrCreateInstance(document.getElementById("avisoModal")).hide();
+  });
+  document.getElementById("modalAvisoOcorrido")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      const response = await fetch("/api/avisos/" + encodeURIComponent(button.dataset.avisoId), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + (sessionStorage.getItem("techcampus_token") || "") },
+        body: JSON.stringify({ ocorrido: Number(button.dataset.ocorrido) })
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.erro || "Não foi possível atualizar o aviso.");
+      const id = button.dataset.avisoId;
+      await carregarAvisosCalendario();
+      const atualizado = avisos.find(item => String(item.id) === String(id));
+      if (atualizado) abrirAviso(atualizado);
+    } catch (error) {
+      window.alert(error.message || "Erro ao atualizar o aviso.");
+    } finally {
+      button.disabled = false;
+    }
+  });
+  document.getElementById("modalAvisoExcluir")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    if (!window.confirm("Excluir este aviso do calendário?")) return;
+    button.disabled = true;
+    try {
+      const response = await fetch("/api/avisos/" + encodeURIComponent(button.dataset.avisoId), {
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + (sessionStorage.getItem("techcampus_token") || "") }
+      });
+      if (!response.ok) throw new Error("A API não confirmou a exclusão.");
+      window.bootstrap.Modal.getOrCreateInstance(document.getElementById("avisoModal")).hide();
+      await carregarAvisosCalendario();
+    } catch (error) {
+      window.alert(error.message || "Erro ao excluir o aviso.");
+    } finally {
+      button.disabled = false;
+    }
   });
   window.addEventListener("hashchange", () => {
     if (location.hash === "#avisos") carregarAvisosCalendario();
