@@ -1643,7 +1643,7 @@
       const resposta = await api("/admin/produtos");
       // Produtos excluídos ficam preservados no banco para manter o histórico dos pedidos,
       // mas não permanecem na lista de gerenciamento.
-      listaProdAdmin = resposta;
+      listaProdAdmin = resposta.filter((produto) => Number(produto.ativo) === 1);
       renderProdutosAdmin();
     } catch (e) {
       setMsg($("gMsg"), e.message);
