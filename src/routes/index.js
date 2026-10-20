@@ -257,7 +257,7 @@ r.patch("/usuarios/:id", autenticar, admin, wrap(async (req, res) => {
 }));
 // Endpoints específicos do painel de gerência (mantêm compatibilidade com a interface original).
 r.get("/admin/produtos", autenticar, admin, (_req, res) => {
-  res.json(db.prepare("SELECT * FROM produtos ORDER BY id DESC").all());
+  res.json(db.prepare("SELECT * FROM produtos WHERE excluido=0 ORDER BY id DESC").all());
 });
 r.get("/admin/pedidos", autenticar, admin, (req, res) => {
   const status = clean(req.query.status, 20);
@@ -299,11 +299,11 @@ r.get("/produtos", (req, res) => {
     categoria
       ? db
           .prepare(
-            "SELECT * FROM produtos WHERE ativo=1 AND categoria=? ORDER BY id DESC",
+            "SELECT * FROM produtos WHERE ativo=1 AND excluido=0 AND categoria=? ORDER BY id DESC",
           )
           .all(categoria)
       : db
-          .prepare("SELECT * FROM produtos WHERE ativo=1 ORDER BY id DESC")
+          .prepare("SELECT * FROM produtos WHERE ativo=1 AND excluido=0 ORDER BY id DESC")
           .all(),
   );
 });
@@ -362,22 +362,16 @@ r.patch("/produtos/:id", autenticar, admin, (req, res) => {
   );
   res.json(get("produtos", p.id));
 });
-// Exclui produtos sem histórico; preserva os que aparecem em pedidos antigos.
+// Excluir remove o produto das listagens, sem confundir a ação com ativar/desativar.
+// O registro é preservado para que pedidos antigos continuem íntegros.
 r.delete("/produtos/:id", autenticar, admin, (req, res) => {
   const id = positiveId(req.params.id);
   const produto = get("produtos", id);
-  if (!produto) return res.sendStatus(404);
-
-  const historico = db.prepare(
-    "SELECT COUNT(*) AS total FROM itens_pedido WHERE produto_id=?"
-  ).get(id);
-  if (Number(historico.total) > 0) {
-    return res.status(409).json({
-      erro: "Este produto possui pedidos no histórico e não pode ser excluído definitivamente. Desative-o para removê-lo da loja sem perder os registros."
-    });
+  if (!produto || produto.excluido === 1) {
+    return res.status(404).json({ erro: "Produto não encontrado ou já excluído." });
   }
 
-  db.prepare("DELETE FROM produtos WHERE id=?").run(id);
+  db.prepare("UPDATE produtos SET excluido=1, ativo=0 WHERE id=?").run(id);
   res.status(204).end();
 });
 
