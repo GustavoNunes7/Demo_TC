@@ -362,8 +362,8 @@ r.patch("/produtos/:id", autenticar, admin, (req, res) => {
   );
   res.json(get("produtos", p.id));
 });
-// Excluir remove o produto das listagens, sem confundir a ação com ativar/desativar.
-// O registro é preservado para que pedidos antigos continuem íntegros.
+// Excluir é uma ação separada de ativar/desativar.
+// Sem histórico, remove o registro; com pedidos antigos, oculta o produto sem quebrar o histórico.
 r.delete("/produtos/:id", autenticar, admin, (req, res) => {
   const id = positiveId(req.params.id);
   const produto = get("produtos", id);
@@ -371,7 +371,19 @@ r.delete("/produtos/:id", autenticar, admin, (req, res) => {
     return res.status(404).json({ erro: "Produto não encontrado ou já excluído." });
   }
 
-  db.prepare("UPDATE produtos SET excluido=1, ativo=0 WHERE id=?").run(id);
+  const historico = db.prepare(
+    "SELECT COUNT(*) AS total FROM itens_pedido WHERE produto_id=?"
+  ).get(id);
+
+  if (Number(historico.total) > 0) {
+    db.prepare("UPDATE produtos SET excluido=1, ativo=0 WHERE id=?").run(id);
+    return res.status(200).json({
+      preservado: true,
+      mensagem: "O produto foi removido da loja, mas seu registro foi preservado porque aparece em pedidos antigos."
+    });
+  }
+
+  db.prepare("DELETE FROM produtos WHERE id=?").run(id);
   res.status(204).end();
 });
 
