@@ -1545,6 +1545,7 @@
           <div id="gProdMsg" role="alert" class="small mt-2"></div>
         </div>
         <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-danger me-auto" id="gProdExcluir" hidden>Excluir produto</button>
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
           <button type="button" class="btn btn-danger" id="gProdSalvar">Salvar</button>
         </div>
@@ -1572,6 +1573,22 @@
       } finally { btn.disabled = false; }
     };
     $("gProdSalvar").onclick = salvarProduto;
+    $("gProdExcluir").onclick = async () => {
+      const p = listaProdAdmin.find((item) => String(item.id) === String(editandoId));
+      if (!p || !confirm("Excluir “" + p.nome + "”? Se houver pedidos antigos, a exclusão definitiva será bloqueada.")) return;
+      const btn = $("gProdExcluir");
+      btn.disabled = true;
+      try {
+        await api("/produtos/" + p.id, { method: "DELETE" });
+        modalProdAdmin.hide();
+        await Promise.all([carregarProdutosAdmin(), carregarProdutos()]);
+        setMsg($("gMsg"), "Produto excluído.", "success");
+      } catch (e) {
+        setMsg($("gProdMsg"), e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    };
     $("gProdFoto").addEventListener("change", () => {
       const file = $("gProdFoto").files?.[0];
       if (gProdPreviewUrl) {
@@ -1688,23 +1705,7 @@
                     class: "btn btn-sm btn-outline-light",
                     type: "button",
                     onclick: () => abrirProduto(p),
-                  }, "Editar"),
-                  h("button", {
-                    class: "btn btn-sm btn-outline-danger",
-                    type: "button",
-                    onclick: async () => {
-                      if (!confirm("Excluir definitivamente “" + p.nome + "”? Se houver pedidos antigos, o sistema impedirá a exclusão para preservar o histórico.")) return;
-                      try {
-                        await api("/produtos/" + p.id, { method: "DELETE" });
-                        await Promise.all([carregarProdutosAdmin(), carregarProdutos()]);
-                        setMsg($("gMsg"), "Produto excluído.", "success");
-                      } catch (e) { setMsg($("gMsg"), e.message); }
-                    }
-                  }, "Excluir"),
-                  !p.ativo ? h("button", { class: "btn btn-sm btn-outline-success", type: "button", onclick: async () => {
-                    try { await api("/produtos/" + p.id, { method: "PATCH", body: JSON.stringify({ ...p, ativo: 1 }) }); await Promise.all([carregarProdutosAdmin(), carregarProdutos()]); setMsg($("gMsg"), "Produto reativado.", "success"); }
-                    catch (e) { setMsg($("gMsg"), e.message); }
-                  } }, "Reativar") : null
+                  }, "Editar")
                 )
               )
             )
@@ -1737,6 +1738,8 @@
     $("gProdEstoque").value = p ? p.estoque : 0;
     $("gProdAtivo").checked = p ? !!p.ativo : true;
     $("gProdAtivoBox").hidden = !p;
+    $("gProdExcluir").hidden = !p;
+    $("gProdExcluir").disabled = false;
     setMsg($("gProdMsg"), "");
     modalProdAdmin.show();
   }
