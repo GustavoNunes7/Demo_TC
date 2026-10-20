@@ -99,8 +99,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       event.type="button";
       event.className="calendar-event "+aviso.categoria+(Number(aviso.ocorrido)===1?" ocorrido":"");
       event.title=Number(aviso.ocorrido)===1?"Ocorrido: "+aviso.titulo:aviso.titulo;
-      event.textContent=(Number(aviso.ocorrido)===1?"✓ ":"")+aviso.titulo;
-      event.setAttribute("aria-label",event.title);
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "calendar-event-title";
+      titleSpan.textContent = aviso.titulo;
+      event.append(titleSpan);
+      if (Number(aviso.ocorrido) === 1) {
+        event.setAttribute("aria-label", "Ocorrido: " + aviso.titulo);
+      } else {
+        event.setAttribute("aria-label", aviso.titulo);
+      }
       event.addEventListener("click",(e)=>{e.stopPropagation();abrirAviso(aviso);});
       events.append(event);
     });
