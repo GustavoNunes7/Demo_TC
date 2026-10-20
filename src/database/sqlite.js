@@ -104,6 +104,10 @@ if (!pagamentosSql.includes("'dinheiro'")) {
 }
 
 // Migrações compatíveis com bancos existentes da versão original.
+// Exclusão lógica de produtos: separa remover da loja de ativar/desativar e preserva pedidos antigos.
+const colunasProdutos = db.prepare("PRAGMA table_info(produtos)").all().map((c) => c.name);
+if (!colunasProdutos.includes("excluido")) db.exec("ALTER TABLE produtos ADD COLUMN excluido INTEGER NOT NULL DEFAULT 0 CHECK(excluido IN (0,1))");
+
 const colunasUsuarios = db.prepare("PRAGMA table_info(usuarios)").all().map((c) => c.name);
 if (!colunasUsuarios.includes("ativo")) db.exec("ALTER TABLE usuarios ADD COLUMN ativo INTEGER NOT NULL DEFAULT 1");
 if (!colunasUsuarios.includes("foto_url")) db.exec("ALTER TABLE usuarios ADD COLUMN foto_url TEXT");
