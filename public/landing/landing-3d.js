@@ -107,15 +107,16 @@
     targetY=((e.clientY-r.top)/r.height-.5)*2;
   }, {passive:true});
   hero.addEventListener('pointerleave',()=>{targetX=0;targetY=0;},{passive:true});
-  const animate = t => { pointerX += (targetX-pointerX)*.045; pointerY += (targetY-pointerY)*.045; draw(t); };
-  if (!reduce) {
-    const loop = t => { pointerX += (targetX-pointerX)*.045; pointerY += (targetY-pointerY)*.045; draw(t); };
-    // requestAnimationFrame loop is started once
-    raf = requestAnimationFrame(function frame(t){pointerX+=(targetX-pointerX)*.045;pointerY+=(targetY-pointerY)*.045;draw(t);});
-  } else {
-    resize(); draw(0);
-  }
   window.addEventListener('resize',resize,{passive:true});
   resize();
-  if (reduce) { cancelAnimationFrame(raf); draw(0); }
+  if (!reduce) {
+    raf = requestAnimationFrame(function frame(t){
+      pointerX += (targetX-pointerX)*.045;
+      pointerY += (targetY-pointerY)*.045;
+      draw(t);
+      raf = requestAnimationFrame(frame);
+    });
+  } else {
+    draw(0);
+  }
 })();
