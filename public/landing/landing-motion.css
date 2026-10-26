@@ -1,0 +1,193 @@
+/* TechCampus — Motion Design / camada visual da landing page
+   Animações em CSS puro, sem dependências adicionais. */
+:root {
+  --tc-motion-red: #e53935;
+  --tc-motion-red-soft: rgba(229, 57, 53, .18);
+  --tc-motion-ink: #101114;
+  --tc-motion-glass: rgba(255,255,255,.76);
+}
+
+/* Entrada cinematográfica, mantendo a identidade SENAI/AAPM */
+html { scroll-behavior: smooth; }
+body { overflow-x: clip; }
+.hero {
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+  background-attachment: scroll;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: min(56vw, 720px);
+  aspect-ratio: 1;
+  right: -12%;
+  top: 4%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(229,57,53,.20) 0%, rgba(229,57,53,.08) 34%, transparent 70%);
+  filter: blur(10px);
+  animation: tc-aura 8s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image: linear-gradient(rgba(20,22,25,.035) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(20,22,25,.035) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: linear-gradient(90deg, transparent 2%, #000 65%, transparent);
+  opacity: .42;
+  pointer-events: none;
+}
+.hero-content { animation: tc-rise-in .95s cubic-bezier(.2,.75,.25,1) both; }
+.hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.hero-label::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tc-motion-red);
+  box-shadow: 0 0 0 5px var(--tc-motion-red-soft);
+  animation: tc-pulse 2.4s ease-in-out infinite;
+}
+.hero h1 { text-wrap: balance; }
+.hero h1 strong {
+  display: inline-block;
+  background: linear-gradient(100deg, var(--tc-motion-red), #ff796d 45%, #a91f27);
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: tc-gradient-flow 7s linear infinite;
+}
+
+/* Profundidade 3D: cards inclinam suavemente no hover */
+.cards-grid { perspective: 1100px; }
+.dark-card, .intro-item, .intro-card, .step-card, .info-card {
+  transform-style: preserve-3d;
+  transition: transform .45s cubic-bezier(.2,.7,.2,1),
+              box-shadow .45s ease, border-color .35s ease;
+}
+.dark-card {
+  overflow: hidden;
+  will-change: transform;
+  border-color: rgba(255,255,255,.13);
+  background: linear-gradient(145deg, rgba(255,255,255,.055), transparent 58%), var(--preto-card, #17191b);
+}
+.dark-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: radial-gradient(circle at 15% 0%, rgba(229,57,53,.25), transparent 46%);
+  opacity: 0;
+  transition: opacity .4s ease;
+  pointer-events: none;
+}
+.dark-card > * { position: relative; transform: translateZ(18px); }
+.dark-card:hover {
+  transform: translateY(-9px) rotateX(3deg) rotateY(-2deg);
+  border-color: rgba(229,57,53,.65);
+  box-shadow: 0 24px 55px rgba(0,0,0,.22), 0 0 0 1px rgba(229,57,53,.08);
+}
+.dark-card:hover::before { opacity: 1; }
+.dark-card .card-icon { transition: transform .4s ease, filter .4s ease; }
+.dark-card:hover .card-icon { transform: translateZ(32px) scale(1.18) rotate(-5deg); filter: drop-shadow(0 5px 12px rgba(229,57,53,.35)); }
+.intro-item:hover, .intro-card:hover, .step-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 18px 35px rgba(17,24,39,.09);
+}
+.conexao-image {
+  transform: perspective(1000px) rotateY(2deg);
+  box-shadow: 0 22px 55px rgba(17,24,39,.14);
+  transition: transform .55s cubic-bezier(.2,.7,.2,1), box-shadow .55s ease;
+}
+.conexao-image:hover {
+  transform: perspective(1000px) rotateY(0) translateY(-5px) scale(1.01);
+  box-shadow: 0 30px 65px rgba(17,24,39,.20);
+}
+.conexao-image img { transition: transform .8s cubic-bezier(.2,.7,.2,1), filter .6s ease; }
+.conexao-image:hover img { transform: scale(1.07); filter: saturate(1.08); }
+
+/* Navegação e botões com feedback tátil */
+.navbar-aapm { transition: box-shadow .35s ease, background .35s ease; }
+.navbar-aapm:hover { box-shadow: 0 10px 35px rgba(0,0,0,.07); }
+.btn-header, .btn-red, .btn-outline, .btn-primary, .btn-black, .cta-button {
+  position: relative;
+  overflow: hidden;
+  transition: transform .25s ease, box-shadow .25s ease, background-color .25s ease;
+}
+.btn-header:hover, .btn-red:hover, .btn-primary:hover, .btn-black:hover, .cta-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(229,57,53,.2);
+}
+.btn-outline:hover { transform: translateY(-3px); }
+.btn-header::after, .btn-red::after, .btn-primary::after, .cta-button::after {
+  content: "";
+  position: absolute;
+  top: -80%;
+  left: -45%;
+  width: 30%;
+  height: 260%;
+  background: rgba(255,255,255,.28);
+  transform: rotate(25deg) translateX(-220%);
+  transition: transform .65s ease;
+  pointer-events: none;
+}
+.btn-header:hover::after, .btn-red:hover::after, .btn-primary:hover::after, .cta-button:hover::after {
+  transform: rotate(25deg) translateX(650%);
+}
+.menu a { position: relative; }
+.menu a::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 100%; bottom: -7px;
+  height: 2px;
+  background: var(--tc-motion-red);
+  transition: right .28s ease;
+}
+.menu a:hover::after { right: 0; }
+
+/* Conteúdo revelado progressivamente ao rolar a página */
+@keyframes tc-rise-in {
+  from { opacity: 0; transform: translate3d(0, 26px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes tc-aura {
+  from { transform: translate3d(0, -2%, 0) scale(.92); opacity: .65; }
+  to { transform: translate3d(-5%, 5%, 0) scale(1.08); opacity: 1; }
+}
+@keyframes tc-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(229,57,53,.12); }
+  50% { box-shadow: 0 0 0 8px rgba(229,57,53,.04); }
+}
+@keyframes tc-gradient-flow { to { background-position: 200% center; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .intro, .possibilidades, .conexao, .como-acessar, .faq-section, .cta {
+    animation: tc-rise-in .8s both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 22%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+  .dark-card:hover, .intro-item:hover, .intro-card:hover, .step-card:hover,
+  .conexao-image:hover { transform: none; }
+}
+@media (max-width: 768px) {
+  .hero::before { width: 95vw; right: -35%; top: 20%; }
+  .dark-card:hover { transform: translateY(-4px); }
+  .conexao-image { transform: none; }
+}
